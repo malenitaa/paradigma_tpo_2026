@@ -1,18 +1,18 @@
 package ar.edu.uade.poo.grupo3.tpo;
 
-import ar.edu.uade.poo.grupo3.tpo.controlador.Boleteria;
-import ar.edu.uade.poo.grupo3.tpo.enums.TipoSector;
-import ar.edu.uade.poo.grupo3.tpo.eventos.Artista;
-import ar.edu.uade.poo.grupo3.tpo.eventos.Funcion;
-import ar.edu.uade.poo.grupo3.tpo.eventos.Preventa;
-import ar.edu.uade.poo.grupo3.tpo.eventos.Recital;
-import ar.edu.uade.poo.grupo3.tpo.infraestructura.SectorFactory;
-import ar.edu.uade.poo.grupo3.tpo.infraestructura.Sede;
-import ar.edu.uade.poo.grupo3.tpo.promociones.Promocion;
-import ar.edu.uade.poo.grupo3.tpo.reglas.NoDejarAsientoSuelto;
-import ar.edu.uade.poo.grupo3.tpo.reglas.RequiereCodigoPreventa;
-import ar.edu.uade.poo.grupo3.tpo.ventas.Cargo;
-import ar.edu.uade.poo.grupo3.tpo.ventas.PaqueteVIP;
+import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
+import ar.edu.uade.poo.grupo3.tpo.modelo.enums.TipoSector;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Artista;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Preventa;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Recital;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorFactory;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
+import ar.edu.uade.poo.grupo3.tpo.modelo.promociones.Promocion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.reglas.NoDejarAsientoSuelto;
+import ar.edu.uade.poo.grupo3.tpo.modelo.reglas.RequiereCodigoPreventa;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cargo;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 
 import java.io.IOException;
 import java.time.LocalDate;

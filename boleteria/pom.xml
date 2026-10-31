@@ -33,7 +33,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>ar.edu.uade.poo.grupo3.tpo.ui.BoleteriaApp</mainClass>
+                    <mainClass>ar.edu.uade.poo.grupo3.tpo.vista.BoleteriaApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

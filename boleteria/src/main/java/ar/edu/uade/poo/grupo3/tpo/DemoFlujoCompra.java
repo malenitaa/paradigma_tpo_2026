@@ -1,18 +1,18 @@
 package ar.edu.uade.poo.grupo3.tpo;
 
-import ar.edu.uade.poo.grupo3.tpo.controlador.Boleteria;
-import ar.edu.uade.poo.grupo3.tpo.enums.MedioPago;
-import ar.edu.uade.poo.grupo3.tpo.eventos.Funcion;
-import ar.edu.uade.poo.grupo3.tpo.excepcion.AutenticacionException;
-import ar.edu.uade.poo.grupo3.tpo.excepcion.DevolucionNoPermitidaException;
-import ar.edu.uade.poo.grupo3.tpo.excepcion.ReservaVencidaException;
-import ar.edu.uade.poo.grupo3.tpo.excepcion.SeleccionInvalidaException;
-import ar.edu.uade.poo.grupo3.tpo.infraestructura.Asiento;
-import ar.edu.uade.poo.grupo3.tpo.infraestructura.SectorNumerado;
-import ar.edu.uade.poo.grupo3.tpo.ventas.Cliente;
-import ar.edu.uade.poo.grupo3.tpo.ventas.Compra;
-import ar.edu.uade.poo.grupo3.tpo.ventas.Devolucion;
-import ar.edu.uade.poo.grupo3.tpo.ventas.Factura;
+import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
+import ar.edu.uade.poo.grupo3.tpo.modelo.enums.MedioPago;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.AutenticacionException;
+import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
+import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.ReservaVencidaException;
+import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.SeleccionInvalidaException;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Asiento;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorNumerado;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cliente;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Compra;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Devolucion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
 
 import java.time.LocalDateTime;
 import java.util.List;

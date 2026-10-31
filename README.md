@@ -20,13 +20,14 @@ por 5 minutos mientras se paga, hay preventa con código de acceso, promociones 
 ```
 paradigma_tpo_2026/
 ├── boleteria/                 Proyecto Java (Maven, Java 17)
-│   ├── src/main/java/...      Código fuente (paquete ar.edu.uade.poo.grupo3.tpo)
+│   ├── src/main/java/...      Código fuente (paquete ar.edu.uade.poo.grupo3.tpo: vista / controlador / modelo)
 │   ├── datos/                 Archivos .txt donde se guardan sedes, sectores y cuentas
 │   ├── Boleteria-TPO.jar      Aplicación compilada, lista para ejecutar
 │   ├── Ejecutar Boleteria.command   Doble click en Mac para abrirla
 │   └── README.md              Cómo ejecutar, patrones, excepciones y archivos
 ├── diagramas/
 │   ├── clases/                Diagrama de clases v3 (diseño acotado) y v4 (igual al código)
+│   ├── arquitectura/          Las tres capas de MVC: vista, controlador y modelo
 │   └── flujo-de-compra/       Secuencia de compra y devolución, estados de Compra y Entrada
 ├── entregas/
 │   ├── entrega-1/             Propuesta de negocio + diagrama preliminar (entregado)
