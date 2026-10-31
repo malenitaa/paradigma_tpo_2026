@@ -20,72 +20,39 @@ import java.util.*;
  */
 public class PanelDevolucion extends JPanel implements Pantalla {
 
-    private static final Color LIBRE = Color.WHITE;
-    private static final Color OCUPADO = Color.LIGHT_GRAY;
-    private static final Color SELECCIONADO = new Color(0x3F51B5);
-    private static final Color MIO = new Color(0x2E7D32);
-
     private final VentaController controlador;
-    private final JComboBox<Funcion> funciones = new JComboBox<>();
-    private final JComboBox<Sector> sectores = new JComboBox<>();
-    private final JComboBox<Cliente> clientes = new JComboBox<>();
-    private final JTextField codigoPreventa = new JTextField(10);
-    private final JLabel avisoPreventa = Estilo.subtitulo(" ");
-    private final JPanel mapa = new JPanel();
-    private final JSpinner cantidad = new JSpinner(new SpinnerNumberModel(2, 1, 10, 1));
-
     private final JLabel detalle = Estilo.subtitulo("Detalle del reembolso.");
     private final JLabel precioUnitario = Estilo.subtitulo(" ");
-    private final JCheckBox paqueteVip = new JCheckBox();
     private final JTextField codigoEntrada = new JTextField(10);
     private final JTextArea motivoDevolucion = new JTextArea(4, 20);
-    private final JButton aplicarPromo = new JButton("Aplicar");
     private final JLabel reembolso = new JLabel("—");
-    private final JLabel descuento = new JLabel("—");
-    private final JLabel cargos = new JLabel("—");
-    private final JLabel total = new JLabel("—");
-    private final JLabel reloj = new JLabel(" ");
-    private final JComboBox<MedioPago> medioPago = new JComboBox<>(MedioPago.values());
-    private final JButton reservar = new JButton("Reservar");
-    private final JButton pagar = new JButton("Pagar");
-    private final JButton cancelar = new JButton("Cancelar");
+    private final JButton pagar = new JButton("Efectuar Devolución");
     private final JButton verificarEntrada = new JButton("Verificar Entrada");
     private final Aviso aviso = new Aviso();
-
-    private final Set<Asiento> seleccion = new LinkedHashSet<>();
-    //private final Timer timer = new Timer(1000, e -> tic());
-    private boolean cargando;
 
     public PanelDevolucion(VentaController controlador) {
         super(new BorderLayout());
         this.controlador = controlador;
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Devolución de entradas",
-                "Ingresa los datos para proceder con la devolución de entradas:"),
+                "Ingrese los datos para proceder con la devolución de entradas:"),
                 BorderLayout.NORTH);
-
         JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(columnaMapa(), BorderLayout.CENTER);
         JPanel resumen = Estilo.tarjeta(columnaResumen());
-
         Border lineBorder = BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1);
         motivoDevolucion.setBorder(lineBorder);
-
         resumen.setPreferredSize(new Dimension(330, 0));
         centro.add(resumen, BorderLayout.EAST);
         add(centro, BorderLayout.CENTER);
         add(Estilo.barraInferior(aviso), BorderLayout.SOUTH);
 
         verificarEntrada.addActionListener(e -> {
-            if (!cargando) {
-                verificarEntrada();
-            }
+            verificarEntrada();
         });
 
         pagar.addActionListener(e -> {
-            if (!cargando) {
-                efectuarDevolucion();
-            }
+            efectuarDevolucion();
         });
     }
 
@@ -93,7 +60,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
 
     private JComponent columnaMapa() {
         JPanel panelCodEntrada = new JPanel(new GridLayout(1, 4, 20, 2));
-        panelCodEntrada.add(new JLabel("Codigo de Entrada"));
+        panelCodEntrada.add(new JLabel("Código de Entrada"));
         panelCodEntrada.add(codigoEntrada);
         panelCodEntrada.add(verificarEntrada);
 
@@ -101,12 +68,9 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         panelMotivo.add(new JLabel("Motivo de la devolución"), BorderLayout.WEST);
         panelMotivo.add(motivoDevolucion, BorderLayout.CENTER);
 
-
-
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
         arriba.add(panelCodEntrada, BorderLayout.CENTER);
         arriba.add(panelMotivo, BorderLayout.SOUTH);
-
 
         JPanel columna = new JPanel(new BorderLayout(0, 12));
         columna.add(arriba, BorderLayout.NORTH);
@@ -115,19 +79,10 @@ public class PanelDevolucion extends JPanel implements Pantalla {
 
 
     private JComponent columnaResumen() {
-        JPanel promo = new JPanel(new BorderLayout(8, 0));
-
-
-        total.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-        reloj.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-        reloj.setForeground(SELECCIONADO);
-
-
         return Estilo.columna(
                 Estilo.seccion("Tu devolución"),
                 detalle,
                 precioUnitario,
-
                 fila("Monto a reembolsar:", reembolso),
                 pagar);
     }
@@ -147,15 +102,6 @@ public class PanelDevolucion extends JPanel implements Pantalla {
 
     @Override
     public void alMostrar() {
-
-    }
-
-    private Funcion funcion() {
-        return (Funcion) funciones.getSelectedItem();
-    }
-
-    private Sector sector() {
-        return (Sector) sectores.getSelectedItem();
     }
 
     private void efectuarDevolucion() {
@@ -175,7 +121,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         try {
             Optional<Entrada> entrada = controlador.buscarEntrada(codigoEntrada.getText());
             if (entrada.isPresent()) {
-                aviso.exito("Entrada válida: " );
+                aviso.exito("Entrada válida." );
                 reembolso.setText(Estilo.pesos(entrada.get().getPrecio()));
                 return Optional.of(true);
             } else {
