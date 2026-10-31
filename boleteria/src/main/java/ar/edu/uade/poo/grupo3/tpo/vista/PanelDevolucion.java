@@ -122,7 +122,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
             Optional<Entrada> entrada = controlador.buscarEntrada(codigoEntrada.getText());
             if (entrada.isPresent()) {
                 aviso.exito("Entrada válida." );
-                reembolso.setText(Estilo.pesos(entrada.get().getPrecio()));
+                reembolso.setText(Estilo.pesos(entrada.get().getvalorPagado()));
                 return Optional.of(true);
             } else {
                 aviso.error("Entrada no encontrada.");

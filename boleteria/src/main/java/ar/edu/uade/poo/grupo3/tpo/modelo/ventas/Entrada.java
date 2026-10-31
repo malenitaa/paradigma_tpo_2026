@@ -16,6 +16,7 @@ public class Entrada {
     private final Asiento asiento;
     private final double precio;
     private EstadoEntrada estado;
+    private double valorPagado;
 
     /** El asiento es null cuando el sector es general. */
     public Entrada(String codigo, Funcion funcion, Sector sector, Asiento asiento) {
@@ -41,6 +42,15 @@ public class Entrada {
     public void pagar() {
         estado = EstadoEntrada.PAGADA;
     }
+
+    public void setvalorPagado(double valorPagado) {
+        this.valorPagado = valorPagado;
+    }
+
+    public double getvalorPagado() {
+        return this.valorPagado;
+    }
+
 
     /** La entrada deja de ocupar lugar (la reserva venció o se canceló). */
     public void anular() {
