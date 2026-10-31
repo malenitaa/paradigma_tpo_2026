@@ -17,8 +17,6 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -33,60 +31,53 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
- * Pantalla de venta "estilo Ticketmaster": se elige función y sector, se marcan asientos en el mapa,
- * se reservan por 5 minutos y se pagan. Al pagar se muestra la factura.
+ * Pantalla de venta: se elige función y sector, se marcan asientos en el mapa, se reservan por
+ * 5 minutos y se pagan. Al pagar se muestra la factura.
  * Es solo la vista: la compra en curso y el reloj de la reserva los lleva el VentaController.
  */
 public class PanelVenta extends JPanel implements Pantalla {
 
-    private static final java.time.format.DateTimeFormatter FECHA =
-            java.time.format.DateTimeFormatter.ofPattern("EEE dd/MM HH:mm", new java.util.Locale("es", "AR"));
     private static final Color LIBRE = Color.WHITE;
-    private static final Color OCUPADO = new Color(0xC9CBD3);
-    private static final Color MIO = new Color(0x15803D);
+    private static final Color OCUPADO = Color.LIGHT_GRAY;
+    private static final Color SELECCIONADO = new Color(0x3F51B5);
+    private static final Color MIO = new Color(0x2E7D32);
 
     private final VentaController controlador;
     private final JComboBox<Funcion> funciones = new JComboBox<>();
     private final JComboBox<Sector> sectores = new JComboBox<>();
     private final JComboBox<Cliente> clientes = new JComboBox<>();
-    private final JTextField codigoPreventa = Estilo.campo();
+    private final JTextField codigoPreventa = new JTextField(10);
     private final JLabel avisoPreventa = Estilo.subtitulo(" ");
-    private final JPanel mapa = new JPanel(new GridBagLayout());
+    private final JPanel mapa = new JPanel();
     private final JSpinner cantidad = new JSpinner(new SpinnerNumberModel(2, 1, 10, 1));
 
     private final JLabel detalle = Estilo.subtitulo("Elegí tus asientos en el mapa.");
     private final JLabel precioUnitario = Estilo.subtitulo(" ");
     private final JCheckBox paqueteVip = new JCheckBox();
-    private final JTextField codigoPromo = Estilo.campo();
-    private final JButton aplicarPromo = Estilo.boton("Aplicar", Estilo.TipoBoton.SECUNDARIO);
-    private final JLabel subtotal = valor();
-    private final JLabel descuento = valor();
-    private final JLabel cargos = valor();
-    private final JLabel total = valor();
+    private final JTextField codigoPromo = new JTextField(10);
+    private final JButton aplicarPromo = new JButton("Aplicar");
+    private final JLabel subtotal = new JLabel("—");
+    private final JLabel descuento = new JLabel("—");
+    private final JLabel cargos = new JLabel("—");
+    private final JLabel total = new JLabel("—");
     private final JLabel reloj = new JLabel(" ");
     private final JComboBox<MedioPago> medioPago = new JComboBox<>(MedioPago.values());
-    private final JButton reservar = Estilo.boton("Reservar", Estilo.TipoBoton.PRIMARIO);
-    private final JButton pagar = Estilo.boton("Pagar", Estilo.TipoBoton.PRIMARIO);
-    private final JButton cancelar = Estilo.boton("Cancelar", Estilo.TipoBoton.SECUNDARIO);
+    private final JButton reservar = new JButton("Reservar");
+    private final JButton pagar = new JButton("Pagar");
+    private final JButton cancelar = new JButton("Cancelar");
     private final Aviso aviso = new Aviso();
 
     private final Set<Asiento> seleccion = new LinkedHashSet<>();
@@ -96,19 +87,18 @@ public class PanelVenta extends JPanel implements Pantalla {
     public PanelVenta(VentaController controlador) {
         super(new BorderLayout());
         this.controlador = controlador;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Venta de entradas",
                 "Elegí la función y el sector, marcá tus asientos y reservalos: tenés 5 minutos para pagar."),
                 BorderLayout.NORTH);
 
-        JPanel centro = new JPanel(new BorderLayout(18, 0));
-        centro.setOpaque(false);
+        JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(columnaMapa(), BorderLayout.CENTER);
-        JComponent resumen = Estilo.tarjeta(columnaResumen());
+        JPanel resumen = Estilo.tarjeta(columnaResumen());
         resumen.setPreferredSize(new Dimension(330, 0));
         centro.add(resumen, BorderLayout.EAST);
         add(centro, BorderLayout.CENTER);
-        add(PanelAltaSede.barraInferior(aviso), BorderLayout.SOUTH);
+        add(Estilo.barraInferior(aviso), BorderLayout.SOUTH);
 
         funciones.addActionListener(e -> {
             if (!cargando) {
@@ -132,172 +122,111 @@ public class PanelVenta extends JPanel implements Pantalla {
     // ------------------------------------------------------------------ armado de la pantalla
 
     private JComponent columnaMapa() {
-        JPanel filtros = new JPanel(new GridLayout(2, 4, 12, 4));
-        filtros.setOpaque(false);
-        filtros.add(Estilo.etiqueta("Función"));
-        filtros.add(Estilo.etiqueta("Sector"));
-        filtros.add(Estilo.etiqueta("Cliente"));
-        filtros.add(Estilo.etiqueta("Código de preventa"));
-        for (JComboBox<?> combo : new JComboBox<?>[]{funciones, sectores, clientes}) {
-            combo.setPreferredSize(new Dimension(160, 36));
-            combo.setBackground(Color.WHITE);
-        }
-        funciones.setRenderer(new javax.swing.DefaultListCellRenderer() {
-            @Override
-            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> lista, Object valor,
-                                                                   int indice, boolean sel, boolean foco) {
-                super.getListCellRendererComponent(lista, valor, indice, sel, foco);
-                if (valor instanceof Funcion f) {
-                    setText(f.getFechaHora().format(FECHA) + " · " + f.getEvento().getNombre());
-                }
-                return this;
-            }
-        });
+        JPanel filtros = new JPanel(new GridLayout(2, 4, 10, 2));
+        filtros.add(new JLabel("Función"));
+        filtros.add(new JLabel("Sector"));
+        filtros.add(new JLabel("Cliente"));
+        filtros.add(new JLabel("Código de preventa"));
         filtros.add(funciones);
         filtros.add(sectores);
         filtros.add(clientes);
         filtros.add(codigoPreventa);
 
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.setOpaque(false);
         arriba.add(filtros, BorderLayout.CENTER);
         arriba.add(avisoPreventa, BorderLayout.SOUTH);
 
-        mapa.setOpaque(false);
-        JPanel contenedorMapa = new JPanel(new BorderLayout(0, 14));
-        contenedorMapa.setBackground(Color.WHITE);
-        contenedorMapa.add(new Escenario(), BorderLayout.NORTH);
         JPanel envoltorio = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        envoltorio.setBackground(Color.WHITE);
         envoltorio.add(mapa);
+        JPanel contenedorMapa = new JPanel(new BorderLayout(0, 12));
+        contenedorMapa.add(escenario(), BorderLayout.NORTH);
         contenedorMapa.add(envoltorio, BorderLayout.CENTER);
         contenedorMapa.add(leyenda(), BorderLayout.SOUTH);
         contenedorMapa.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        JScrollPane scroll = Estilo.scroll(contenedorMapa);
 
-        JPanel columna = new JPanel(new BorderLayout(0, 14));
+        JPanel columna = new JPanel(new BorderLayout(0, 12));
         columna.add(arriba, BorderLayout.NORTH);
-        columna.add(scroll, BorderLayout.CENTER);
+        columna.add(new JScrollPane(contenedorMapa), BorderLayout.CENTER);
         return Estilo.tarjeta(columna);
     }
 
-    private JComponent columnaResumen() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(PanelAltaSede.alinear(Estilo.seccion("Tu compra")));
-        panel.add(Box.createVerticalStrut(8));
-        panel.add(PanelAltaSede.alinear(detalle));
-        panel.add(Box.createVerticalStrut(2));
-        panel.add(PanelAltaSede.alinear(precioUnitario));
-        panel.add(Box.createVerticalStrut(12));
-
-        paqueteVip.setOpaque(false);
-        paqueteVip.setFont(Estilo.CUERPO);
-        panel.add(PanelAltaSede.alinear(paqueteVip));
-        panel.add(Box.createVerticalStrut(10));
-
-        panel.add(PanelAltaSede.alinear(Estilo.etiqueta("Código promocional")));
-        panel.add(Box.createVerticalStrut(4));
-        JPanel promo = new JPanel(new BorderLayout(8, 0));
-        promo.setOpaque(false);
-        promo.add(codigoPromo, BorderLayout.CENTER);
-        promo.add(aplicarPromo, BorderLayout.EAST);
-        promo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        panel.add(PanelAltaSede.alinear(promo));
-        panel.add(Box.createVerticalStrut(16));
-
-        panel.add(PanelAltaSede.alinear(fila("Subtotal", subtotal)));
-        panel.add(PanelAltaSede.alinear(fila("Promoción", descuento)));
-        panel.add(PanelAltaSede.alinear(fila("Cargo por servicio", cargos)));
-        total.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
-        panel.add(PanelAltaSede.alinear(fila("Total", total)));
-        panel.add(Box.createVerticalStrut(14));
-
-        reloj.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
-        reloj.setForeground(Estilo.ACENTO);
-        panel.add(PanelAltaSede.alinear(reloj));
-        panel.add(Box.createVerticalStrut(10));
-
-        panel.add(PanelAltaSede.alinear(Estilo.etiqueta("Medio de pago")));
-        panel.add(Box.createVerticalStrut(4));
-        medioPago.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        medioPago.setBackground(Color.WHITE);
-        panel.add(PanelAltaSede.alinear(medioPago));
-        panel.add(Box.createVerticalStrut(14));
-
-        JPanel botones = new JPanel(new GridLayout(1, 2, 8, 0));
-        botones.setOpaque(false);
-        botones.add(cancelar);
-        botones.add(reservar);
-        botones.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        panel.add(PanelAltaSede.alinear(botones));
-        panel.add(Box.createVerticalStrut(8));
-        pagar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        panel.add(PanelAltaSede.alinear(pagar));
-        panel.add(Box.createVerticalGlue());
-
-        JLabel adelantar = Estilo.subtitulo("<html><u>Demo: adelantar el reloj 5 minutos</u></html>");
-        adelantar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        adelantar.setToolTipText("Simula que pasaron 5 minutos para mostrar cómo vence la reserva");
-        adelantar.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                controlador.adelantarReloj(5);
-                tic();
-            }
-        });
-        panel.add(PanelAltaSede.alinear(adelantar));
-        return panel;
+    /** El escenario arriba del mapa, para orientarse: una etiqueta oscura centrada. */
+    private static JLabel escenario() {
+        JLabel escenario = new JLabel("ESCENARIO / PANTALLA", JLabel.CENTER);
+        escenario.setOpaque(true);
+        escenario.setBackground(Color.DARK_GRAY);
+        escenario.setForeground(Color.WHITE);
+        escenario.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        escenario.setPreferredSize(new Dimension(0, 34));
+        return escenario;
     }
 
-    private static JPanel fila(String texto, JLabel valor) {
-        JPanel fila = new JPanel(new BorderLayout());
-        fila.setOpaque(false);
-        fila.add(Estilo.subtitulo(texto), BorderLayout.WEST);
-        fila.add(valor, BorderLayout.EAST);
-        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        fila.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
-        return fila;
-    }
-
-    private static JLabel valor() {
-        JLabel label = new JLabel("—");
-        label.setFont(Estilo.CUERPO);
-        return label;
-    }
-
-    private JComponent leyenda() {
-        JPanel leyenda = new JPanel(new FlowLayout(FlowLayout.CENTER, 18, 0));
-        leyenda.setBackground(Color.WHITE);
+    private static JPanel leyenda() {
+        JPanel leyenda = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
         leyenda.add(muestra(LIBRE, "Libre"));
-        leyenda.add(muestra(Estilo.ACENTO, "Seleccionado"));
+        leyenda.add(muestra(SELECCIONADO, "Seleccionado"));
         leyenda.add(muestra(MIO, "Tu reserva"));
         leyenda.add(muestra(OCUPADO, "Ocupado"));
         return leyenda;
     }
 
-    private static JComponent muestra(Color color, String texto) {
-        JLabel label = Estilo.subtitulo(texto);
-        label.setIcon(new javax.swing.Icon() {
-            public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(color);
-                g2.fillRoundRect(x, y, 14, 14, 5, 5);
-                g2.setColor(Estilo.BORDE.darker());
-                g2.drawRoundRect(x, y, 14, 14, 5, 5);
-                g2.dispose();
-            }
+    /** Un cuadradito del color indicado y su texto, para la leyenda del mapa. */
+    private static JPanel muestra(Color color, String texto) {
+        JLabel cuadrado = new JLabel();
+        cuadrado.setOpaque(true);
+        cuadrado.setBackground(color);
+        cuadrado.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        cuadrado.setPreferredSize(new Dimension(14, 14));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        panel.add(cuadrado);
+        panel.add(Estilo.subtitulo(texto));
+        return panel;
+    }
 
-            public int getIconWidth() {
-                return 16;
-            }
+    private JComponent columnaResumen() {
+        JPanel promo = new JPanel(new BorderLayout(8, 0));
+        promo.add(codigoPromo, BorderLayout.CENTER);
+        promo.add(aplicarPromo, BorderLayout.EAST);
 
-            public int getIconHeight() {
-                return 16;
-            }
+        total.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+        reloj.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        reloj.setForeground(SELECCIONADO);
+
+        JPanel botones = new JPanel(new GridLayout(1, 2, 8, 0));
+        botones.add(cancelar);
+        botones.add(reservar);
+
+        JButton adelantar = new JButton("Demo: adelantar el reloj 5 minutos");
+        adelantar.setToolTipText("Simula que pasaron 5 minutos para mostrar cómo vence la reserva");
+        adelantar.addActionListener(e -> {
+            controlador.adelantarReloj(5);
+            tic();
         });
-        return label;
+
+        return Estilo.columna(
+                Estilo.seccion("Tu compra"),
+                detalle,
+                precioUnitario,
+                paqueteVip,
+                new JLabel("Código promocional"),
+                promo,
+                fila("Subtotal", subtotal),
+                fila("Promoción", descuento),
+                fila("Cargo por servicio", cargos),
+                fila("Total", total),
+                reloj,
+                new JLabel("Medio de pago"),
+                medioPago,
+                botones,
+                pagar,
+                adelantar);
+    }
+
+    private static JPanel fila(String texto, JLabel valor) {
+        JPanel fila = new JPanel(new BorderLayout());
+        fila.add(Estilo.subtitulo(texto), BorderLayout.WEST);
+        fila.add(valor, BorderLayout.EAST);
+        return fila;
     }
 
     // ------------------------------------------------------------------ datos
@@ -341,7 +270,6 @@ public class PanelVenta extends JPanel implements Pantalla {
             funcion.getSede().getSectores().forEach(sectores::addItem);
             avisoPreventa.setText(controlador.estaEnPreventa(funcion)
                     ? "Esta función está en preventa: necesitás el código de acceso." : " ");
-            avisoPreventa.setForeground(Estilo.AVISO);
         }
         cargando = false;
         seleccion.clear();
@@ -367,47 +295,39 @@ public class PanelVenta extends JPanel implements Pantalla {
         actualizarResumen();
     }
 
+    /** Una grilla con una fila por letra: la etiqueta de la fila y un botón por asiento. */
     private void dibujarAsientos(Funcion funcion, SectorNumerado sector) {
-        int fila = 0;
-        for (String nombreFila : sector.getFilas()) {
-            GridBagConstraints c = new GridBagConstraints();
-            c.gridy = fila;
-            c.gridx = 0;
-            c.insets = new Insets(2, 0, 2, 8);
-            JLabel etiqueta = Estilo.etiqueta(nombreFila);
-            mapa.add(etiqueta, c);
-            int columna = 1;
-            for (Asiento asiento : sector.getAsientosDeFila(nombreFila)) {
-                c = new GridBagConstraints();
-                c.gridy = fila;
-                c.gridx = columna++;
-                c.insets = new Insets(2, 2, 2, 2);
-                mapa.add(new BotonAsiento(asiento, estado(funcion, sector, asiento)), c);
+        List<String> filas = sector.getFilas();
+        int porFila = 0;
+        for (String nombreFila : filas) {
+            porFila = Math.max(porFila, sector.getAsientosDeFila(nombreFila).size());
+        }
+        mapa.setLayout(new GridLayout(filas.size(), porFila + 1, 3, 3));
+        for (String nombreFila : filas) {
+            mapa.add(new JLabel(nombreFila, JLabel.CENTER));
+            List<Asiento> asientos = sector.getAsientosDeFila(nombreFila);
+            for (Asiento asiento : asientos) {
+                mapa.add(botonAsiento(asiento, estado(funcion, sector, asiento)));
             }
-            fila++;
+            for (int i = asientos.size(); i < porFila; i++) {
+                mapa.add(new JLabel());
+            }
         }
     }
 
     private void dibujarGeneral(Funcion funcion, SectorGeneral sector) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setOpaque(false);
-        JLabel titulo = Estilo.seccion(sector.getNombre() + " · sector general (de pie)");
-        JLabel libres = Estilo.subtitulo(Estilo.numero(funcion.lugaresLibres(sector)) + " de "
-                + Estilo.numero(sector.getCapacidad()) + " lugares libres · sin asiento asignado");
         JPanel elegir = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        elegir.setOpaque(false);
-        elegir.add(Estilo.etiqueta("Cantidad de entradas"));
-        cantidad.setPreferredSize(new Dimension(80, 34));
+        elegir.add(new JLabel("Cantidad de entradas"));
         cantidad.setEnabled(!controlador.hayCompraEnCurso());
         elegir.add(cantidad);
-        panel.add(PanelAltaSede.alinear(titulo));
-        panel.add(Box.createVerticalStrut(6));
-        panel.add(PanelAltaSede.alinear(libres));
-        panel.add(Box.createVerticalStrut(14));
-        panel.add(PanelAltaSede.alinear(elegir));
+        JPanel panel = Estilo.columna(
+                Estilo.seccion(sector.getNombre() + " · sector general (de pie)"),
+                Estilo.subtitulo(Estilo.numero(funcion.lugaresLibres(sector)) + " de "
+                        + Estilo.numero(sector.getCapacidad()) + " lugares libres · sin asiento asignado"),
+                elegir);
         panel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
-        mapa.add(panel);
+        mapa.setLayout(new BorderLayout());
+        mapa.add(panel, BorderLayout.CENTER);
     }
 
     private Color estado(Funcion funcion, Sector sector, Asiento asiento) {
@@ -415,81 +335,51 @@ public class PanelVenta extends JPanel implements Pantalla {
             return MIO;
         }
         if (seleccion.contains(asiento)) {
-            return Estilo.ACENTO;
+            return SELECCIONADO;
         }
         return funcion.estaDisponible(sector, asiento) ? LIBRE : OCUPADO;
     }
 
-    /** Un asiento del mapa: se marca y desmarca con un click mientras no haya una reserva en curso. */
-    private final class BotonAsiento extends JComponent {
-
-        private final Asiento asiento;
-        private final Color color;
-
-        BotonAsiento(Asiento asiento, Color color) {
-            this.asiento = asiento;
-            this.color = color;
-            setPreferredSize(new Dimension(26, 26));
-            setToolTipText("Fila " + asiento.getFila() + " · Asiento " + asiento.getNumero());
-            boolean clickeable = !controlador.hayCompraEnCurso() && (color == LIBRE || color == Estilo.ACENTO);
-            if (clickeable) {
-                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (!seleccion.remove(asiento)) {
-                            if (seleccion.size() >= 10) {
-                                aviso.error("Podés elegir hasta 10 asientos por compra.");
-                                return;
-                            }
-                            seleccion.add(asiento);
-                        }
-                        aviso.ocultar();
-                        dibujarMapa();
-                    }
-                });
+    /** Marca o desmarca un asiento (hasta 10 por compra) y vuelve a dibujar el mapa. */
+    private void alternar(Asiento asiento) {
+        if (!seleccion.remove(asiento)) {
+            if (seleccion.size() >= 10) {
+                aviso.error("Podés elegir hasta 10 asientos por compra.");
+                return;
             }
+            seleccion.add(asiento);
         }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(color);
-            g2.fillRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 8, 8);
-            g2.setColor(color == LIBRE ? Estilo.BORDE.darker() : color.darker());
-            g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 8, 8);
-            g2.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
-            g2.setColor(color == LIBRE || color == OCUPADO ? Estilo.TEXTO_SUAVE : Color.WHITE);
-            String numero = String.valueOf(asiento.getNumero());
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(numero, (getWidth() - fm.stringWidth(numero)) / 2,
-                    (getHeight() + fm.getAscent()) / 2 - 2);
-            g2.dispose();
-        }
+        aviso.ocultar();
+        dibujarMapa();
     }
 
-    /** El escenario (la "pantalla") arriba del mapa, para orientarse. */
-    private static final class Escenario extends JComponent {
+    /** Un asiento del mapa: un botón chico con el color de su estado. Solo se puede clickear si está libre. */
+    private JButton botonAsiento(Asiento asiento, Color color) {
+        JButton boton = new JButton(String.valueOf(asiento.getNumero()));
+        boton.setPreferredSize(new Dimension(32, 28));
+        boton.setMargin(new Insets(0, 0, 0, 0));
+        boton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        boton.setFocusPainted(false);
+        boton.setBackground(color);
+        boton.setForeground(color == LIBRE || color == OCUPADO ? Color.BLACK : Color.WHITE);
+        boton.setToolTipText("Fila " + asiento.getFila() + " · Asiento " + asiento.getNumero());
+        boton.setEnabled(!controlador.hayCompraEnCurso() && (color == LIBRE || color == SELECCIONADO));
+        boton.addActionListener(new OyenteAsiento(asiento));
+        return boton;
+    }
 
-        Escenario() {
-            setPreferredSize(new Dimension(0, 46));
+    /** Oyente con nombre (clase interna): cada botón del mapa sabe qué asiento representa. */
+    private class OyenteAsiento implements ActionListener {
+
+        private final Asiento asiento;
+
+        OyenteAsiento(Asiento asiento) {
+            this.asiento = asiento;
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            int ancho = Math.min(560, getWidth() - 40);
-            int x = (getWidth() - ancho) / 2;
-            g2.setColor(Estilo.LATERAL);
-            g2.fillRoundRect(x, 6, ancho, 30, 30, 30);
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-            String texto = "ESCENARIO / PANTALLA";
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(texto, (getWidth() - fm.stringWidth(texto)) / 2, 26);
-            g2.dispose();
+        public void actionPerformed(ActionEvent e) {
+            alternar(asiento);
         }
     }
 
@@ -519,11 +409,11 @@ public class PanelVenta extends JPanel implements Pantalla {
         precioUnitario.setText(sector.getNombre() + " · " + Estilo.pesos(unitario) + " por entrada");
 
         if (enCurso) {
-            StringBuilder texto = new StringBuilder("<html>Reservado: ");
+            StringBuilder texto = new StringBuilder("Reservado:");
             for (Entrada e : compra.getEntradasActivas()) {
-                texto.append(e.getAsiento() == null ? "general " : e.getAsiento() + " ");
+                texto.append(' ').append(e.getAsiento() == null ? "general" : e.getAsiento());
             }
-            detalle.setText(texto.append("</html>").toString());
+            detalle.setText(texto.toString());
             subtotal.setText(Estilo.pesos(compra.calcularSubtotal()));
             descuento.setText(compra.calcularDescuento() > 0 ? "- " + Estilo.pesos(compra.calcularDescuento()) : "—");
             cargos.setText(Estilo.pesos(compra.calcularCargos()));
@@ -533,8 +423,7 @@ public class PanelVenta extends JPanel implements Pantalla {
         int entradas = sector instanceof SectorNumerado ? seleccion.size() : (Integer) cantidad.getValue();
         if (sector instanceof SectorNumerado) {
             detalle.setText(seleccion.isEmpty() ? "Elegí tus asientos en el mapa."
-                    : "<html>Elegidos: " + String.join(" ", seleccion.stream().map(Asiento::toString).toList())
-                    + "</html>");
+                    : "Elegidos: " + String.join(" ", seleccion.stream().map(Asiento::toString).toList()));
         } else {
             detalle.setText(entradas + " entrada(s) en " + sector.getNombre());
         }

@@ -56,6 +56,7 @@ preventa `ORBITA26` · promociones `FAN10` (10 %) y `BANCO20` (20 %).
 
 | Área | Qué hace |
 |---|---|
+| **Interfaz** | Swing con componentes estándar: una sola ventana con menú (Inicio · Sedes · Ventas · Ayuda, con atajos de teclado) y las pantallas como tarjetas; avisos en la misma pantalla y 3 diálogos (confirmar baja, error de arranque, comprobante) |
 | **ABM de sedes** | Consulta, alta, modificación y baja de sedes y sus sectores (numerados con filas y asientos, o generales con capacidad) |
 | **Venta de entradas** | Mapa de asientos con escenario, reserva por 5 minutos con cuenta regresiva, paquete VIP, promoción por código, pago y factura |
 | **Reglas de venta** | No se puede dejar un asiento suelto; durante la preventa se exige el código de acceso |
@@ -70,7 +71,7 @@ preventa `ORBITA26` · promociones `FAN10` (10 %) y `BANCO20` (20 %).
 |---|---|---|---|
 | [Parcial 1](entregas/entrega-1/) | 11/10 | Propuesta de negocio + diagrama de clases preliminar | Entregada |
 | [Parcial 2](entregas/entrega-2/) | 01/11 | Código, patrones, excepciones, ABM Swing y persistencia | En revisión del grupo |
-| [Final](entregas/entrega-final/) | 18/11 | Las 6 pantallas, dialogs y documentación (≈10 páginas) | Documentación en borrador |
+| [Final](entregas/entrega-final/) | 18/11 | Las 6 pantallas (falta Devoluciones), dialogs y documentación (≈10 páginas) | Documentación en borrador |
 | Defensa | 04/12 | Exposición en tono de venta · guía: [DEFENSA.md](DEFENSA.md) | Pendiente |
 
 ## Cómo trabajamos

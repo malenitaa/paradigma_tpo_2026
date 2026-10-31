@@ -4,40 +4,34 @@ import ar.edu.uade.poo.grupo3.tpo.controlador.SedeController;
 import ar.edu.uade.poo.grupo3.tpo.controlador.VentaController;
 import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Ventana principal: barra lateral de navegación y las pantallas en un CardLayout. */
+/** Ventana principal: una barra de menú para navegar y las pantallas apiladas en un CardLayout. */
 public class VentanaPrincipal extends JFrame {
 
     private final CardLayout tarjetas = new CardLayout();
     private final JPanel contenido = new JPanel(tarjetas);
     private final Map<String, Pantalla> pantallas = new LinkedHashMap<>();
-    private final Map<String, ItemMenu> items = new LinkedHashMap<>();
 
     public VentanaPrincipal(Boleteria boleteria) {
         super("Boletería · TPO Grupo 3");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1240, 780);
-        setMinimumSize(new Dimension(1080, 680));
+        setSize(1150, 760);
         setLocationRelativeTo(null);
 
         SedeController sedes = new SedeController(boleteria);
@@ -48,11 +42,9 @@ public class VentanaPrincipal extends JFrame {
         registrar("modificacion", new PanelModificacionSede(sedes));
         registrar("baja", new PanelBajaSede(sedes));
         registrar("venta", new PanelVenta(ventas));
-        contenido.setBackground(Estilo.FONDO);
 
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(barraLateral(), BorderLayout.WEST);
-        getContentPane().add(contenido, BorderLayout.CENTER);
+        setJMenuBar(crearMenu());
+        add(contenido, BorderLayout.CENTER);
         ir("inicio");
     }
 
@@ -61,115 +53,62 @@ public class VentanaPrincipal extends JFrame {
         contenido.add((Component) pantalla, id);
     }
 
+    /** Muestra la pantalla pedida; antes le avisa para que recargue sus datos. */
     public void ir(String id) {
         pantallas.get(id).alMostrar();
         tarjetas.show(contenido, id);
-        items.forEach((clave, item) -> item.setActivo(clave.equals(id)));
     }
 
-    private JComponent barraLateral() {
-        JPanel lateral = new JPanel();
-        lateral.setLayout(new BoxLayout(lateral, BoxLayout.Y_AXIS));
-        lateral.setBackground(Estilo.LATERAL);
-        lateral.setPreferredSize(new Dimension(236, 0));
-        lateral.setBorder(BorderFactory.createEmptyBorder(26, 14, 20, 14));
+    private JMenuBar crearMenu() {
+        JMenu inicio = new JMenu("Inicio");
+        inicio.add(item("Panel de control", KeyEvent.VK_I, () -> ir("inicio")));
+        inicio.addSeparator();
+        inicio.add(item("Salir", KeyEvent.VK_Q, () -> System.exit(0)));
 
-        JLabel marca = new JLabel("● Boletería");
-        marca.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-        marca.setForeground(Color.WHITE);
-        JLabel grupo = new JLabel("Venta de entradas · Grupo 3");
-        grupo.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        grupo.setForeground(Estilo.LATERAL_TEXTO);
-        lateral.add(izquierda(marca));
-        lateral.add(Box.createVerticalStrut(4));
-        lateral.add(izquierda(grupo));
-        lateral.add(Box.createVerticalStrut(28));
+        JMenu sedes = new JMenu("Sedes");
+        sedes.add(item("Consulta", KeyEvent.VK_1, () -> ir("consulta")));
+        sedes.add(item("Alta", KeyEvent.VK_2, () -> ir("alta")));
+        sedes.add(item("Modificación", KeyEvent.VK_3, () -> ir("modificacion")));
+        sedes.add(item("Baja", KeyEvent.VK_4, () -> ir("baja")));
 
-        lateral.add(item("inicio", "Inicio"));
-        lateral.add(Box.createVerticalStrut(18));
-        lateral.add(titulo("GESTIÓN DE SEDES"));
-        lateral.add(item("consulta", "Consulta"));
-        lateral.add(item("alta", "Alta"));
-        lateral.add(item("modificacion", "Modificación"));
-        lateral.add(item("baja", "Baja"));
-        lateral.add(Box.createVerticalStrut(18));
-        lateral.add(titulo("VENTAS"));
-        lateral.add(item("venta", "Venta de entradas"));
-        lateral.add(proximamente("Devoluciones (entrega final)"));
-        lateral.add(Box.createVerticalGlue());
+        JMenu ventas = new JMenu("Ventas");
+        ventas.add(item("Venta de entradas", KeyEvent.VK_V, () -> ir("venta")));
+        JMenuItem devoluciones = new JMenuItem("Devoluciones (entrega final)");
+        devoluciones.setEnabled(false);
+        ventas.add(devoluciones);
 
-        JLabel pie = new JLabel("<html>Datos guardados en<br>la carpeta <b>datos/</b></html>");
-        pie.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        pie.setForeground(new Color(0x7D7A93));
-        lateral.add(izquierda(pie));
-        return lateral;
-    }
-
-    private JComponent item(String id, String texto) {
-        ItemMenu item = new ItemMenu(texto);
-        item.addActionListener(e -> ir(id));
-        items.put(id, item);
-        return izquierda(item);
-    }
-
-    private JComponent proximamente(String texto) {
-        ItemMenu item = new ItemMenu(texto);
-        item.setEnabled(false);
-        item.setToolTipText("Se completa para la entrega final");
-        return izquierda(item);
-    }
-
-    private JComponent titulo(String texto) {
-        JLabel label = new JLabel(texto);
-        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-        label.setForeground(new Color(0x7D7A93));
-        label.setBorder(BorderFactory.createEmptyBorder(0, 12, 6, 0));
-        return izquierda(label);
-    }
-
-    private static <T extends JComponent> T izquierda(T componente) {
-        componente.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return componente;
-    }
-
-    /** Botón de la barra lateral con resaltado para la pantalla actual. */
-    private static final class ItemMenu extends JButton {
-
-        private boolean activo;
-
-        ItemMenu(String texto) {
-            super(texto);
-            setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-            setHorizontalAlignment(LEFT);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setForeground(Estilo.LATERAL_TEXTO);
-            setBorder(BorderFactory.createEmptyBorder(9, 12, 9, 12));
-            setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        }
-
-        void setActivo(boolean activo) {
-            this.activo = activo;
-            setForeground(activo ? Color.WHITE : Estilo.LATERAL_TEXTO);
-            setFont(getFont().deriveFont(activo ? Font.BOLD : Font.PLAIN));
-            repaint();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            if (activo) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Estilo.LATERAL_ACTIVO);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                g2.setColor(Estilo.ACENTO);
-                g2.fillRoundRect(0, 8, 4, getHeight() - 16, 4, 4);
-                g2.dispose();
+        JMenu ayuda = new JMenu("Ayuda");
+        JMenuItem acercaDe = new JMenuItem("Acerca de...");
+        acercaDe.addActionListener(new ActionListener() {   // clase anónima, la segunda forma de oyente
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                acercaDe();
             }
-            super.paintComponent(g);
+        });
+        ayuda.add(acercaDe);
+
+        JMenuBar barra = new JMenuBar();
+        barra.add(inicio);
+        barra.add(sedes);
+        barra.add(ventas);
+        barra.add(ayuda);
+        return barra;
+    }
+
+    /** Crea un ítem de menú con su acción (una lambda) y, si se indica una tecla, el atajo Ctrl+tecla. */
+    private JMenuItem item(String texto, int tecla, Runnable accion) {
+        JMenuItem item = new JMenuItem(texto);
+        if (tecla != 0) {
+            item.setAccelerator(KeyStroke.getKeyStroke(tecla, InputEvent.CTRL_DOWN_MASK));
         }
+        item.addActionListener(e -> accion.run());
+        return item;
+    }
+
+    private void acercaDe() {
+        JOptionPane.showMessageDialog(this,
+                "Boletería · Trabajo Práctico Obligatorio\nParadigma Orientado a Objetos · UADE 2026\n\n"
+                        + "Grupo 3: Aded Fermín, Ávila Tomás, Vázquez Daniel, Villa Abrille Malena",
+                "Acerca de", JOptionPane.INFORMATION_MESSAGE);
     }
 }
