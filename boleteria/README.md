@@ -31,10 +31,10 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | Pedido de la consigna | Dónde está |
 |---|---|
 | Código de las clases del diagrama (con los ajustes de la Entrega 1) | `src/main/java/ar/edu/uade/poo/grupo3/tpo` |
-| 4 pantallas Swing de ABM | Sedes: **Consulta**, **Alta**, **Modificación** y **Baja** (`ui/Panel*Sede*.java`) |
-| Adelanto: pantalla de **Venta de entradas** | `ui/PanelVenta.java` + `ui/FacturaDialog.java` (mapa de asientos, reserva de 5 min, promo, pago y factura) |
+| 4 pantallas Swing de ABM | Sedes: **Consulta**, **Alta**, **Modificación** y **Baja** (`vista/Panel*Sede*.java` + `controlador/SedeController.java`) |
+| Adelanto: pantalla de **Venta de entradas** | `vista/PanelVenta.java` + `controlador/VentaController.java` + `vista/FacturaDialog.java` (mapa de asientos, reserva de 5 min, promo, pago y factura) |
 | Persistencia en archivos de texto | carpeta `datos/` (ver abajo) |
-| Excepción personalizada del negocio | `excepcion/`: `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` |
+| Excepción personalizada del negocio | `modelo/excepcion/`: `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` |
 | Al menos 3 try/catch | ver tabla de try/catch |
 | Al menos 3 patrones implementados | ver tabla de patrones |
 
@@ -49,22 +49,22 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 
 | Patrón | Dónde |
 |---|---|
-| **Singleton** | `controlador.Boleteria.getInstancia()` — una sola boletería en todo el sistema |
-| **Controlador (GRASP)** | `Boleteria` recibe todas las operaciones del sistema; `ui.SedeController` las del ABM |
-| **Strategy** | `reglas.ReglaDeVenta` (`NoDejarAsientoSuelto`, `RequiereCodigoPreventa`): la boletería valida la lista de reglas sin conocerlas |
-| **Factory** | `infraestructura.SectorFactory` crea los sectores (lo usan las pantallas y el repositorio) |
-| **Repository** | `persistencia.Repositorio<T>` con `SedeRepositorioArchivo` y `ClienteRepositorioArchivo` |
-| **MVC** | Vistas `ui.Panel*` → controlador `ui.SedeController` → modelo `Boleteria` |
+| **Singleton** | `modelo.Boleteria.getInstancia()` — una sola boletería en todo el sistema |
+| **Controlador (GRASP)** | `Boleteria` recibe todas las operaciones del sistema: es la fachada del modelo (no confundir con los controladores de MVC) |
+| **Strategy** | `modelo.reglas.ReglaDeVenta` (`NoDejarAsientoSuelto`, `RequiereCodigoPreventa`): la boletería valida la lista de reglas sin conocerlas |
+| **Factory** | `modelo.infraestructura.SectorFactory` crea los sectores (lo usan las pantallas y el repositorio) |
+| **Repository** | `modelo.persistencia.Repositorio<T>` con `SedeRepositorioArchivo` y `ClienteRepositorioArchivo` |
+| **MVC** | **Vista** `vista.Panel*` (arma la pantalla y muestra mensajes) → **Controlador** `controlador.SedeController` / `controlador.VentaController` (recibe lo que hace el usuario, lleva la compra en curso) → **Modelo** `modelo.Boleteria` y el dominio. Ver [diagrama MVC](../diagramas/arquitectura/mvc.puml) |
 | **Creador / Experto (GRASP)** | `Compra` crea sus `Entrada`; `Funcion` sabe qué asientos están libres; `Sector` calcula su multiplicador |
 | **Herencia y polimorfismo** | `Sector` → `SectorNumerado` / `SectorGeneral` (`getCapacidad`, `calcularMultiplicador`); `Evento` → `Recital` |
 
 ## Manejo de excepciones (try/catch)
 
-1. `ui.PanelAltaSede.guardar()` — datos inválidos (`IllegalArgumentException`) y error al escribir el archivo (`IOException`).
-2. `ui.PanelModificacionSede` — sede con funciones programadas (`IllegalStateException`) y `IOException` al guardar.
-3. `ui.PanelBajaSede.darDeBaja()` — no se puede dar de baja una sede con funciones (`IllegalStateException`) y `IOException`.
-4. `ui.BoleteriaApp` — error al leer los archivos de `datos/` al iniciar.
-5. `controlador.Boleteria.confirmarCompra()` — si falla guardar la factura, la venta no se pierde.
+1. `vista.PanelAltaSede.guardar()` — datos inválidos (`IllegalArgumentException`) y error al escribir el archivo (`IOException`).
+2. `vista.PanelModificacionSede` — sede con funciones programadas (`IllegalStateException`) y `IOException` al guardar.
+3. `vista.PanelBajaSede.darDeBaja()` — no se puede dar de baja una sede con funciones (`IllegalStateException`) y `IOException`.
+4. `vista.BoleteriaApp` — error al leer los archivos de `datos/` al iniciar.
+5. `modelo.Boleteria.confirmarCompra()` — si falla guardar la factura, la venta no se pierde.
 6. `DemoFlujoCompra` — `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` y `AutenticacionException`.
 
 ## Archivos de datos (`datos/`)
@@ -81,18 +81,24 @@ Si la carpeta `datos/` no existe, se crea con datos de ejemplo. Los eventos y fu
 
 ## Estructura del código
 
+Los paquetes siguen las tres capas de MVC (ver [`diagramas/arquitectura/mvc.puml`](../diagramas/arquitectura/mvc.puml)):
+
 ```
 ar.edu.uade.poo.grupo3.tpo
-├── controlador/     Boleteria (Singleton + Controlador)
-├── infraestructura/ Sede, Sector, SectorNumerado, SectorGeneral, Asiento, SectorFactory
-├── eventos/         Evento, Recital, Artista, Funcion, Preventa
-├── ventas/          Cliente, Cuenta, Compra, Entrada, Cargo, PaqueteVIP, Pago, Devolucion, Factura
-├── promociones/     Promocion
-├── reglas/          ReglaDeVenta, NoDejarAsientoSuelto, RequiereCodigoPreventa
-├── excepcion/       excepciones del negocio
-├── enums/           EstadoFuncion, EstadoCompra, EstadoEntrada, MedioPago, TipoSector
-├── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo, FacturaArchivo
-├── ui/              BoleteriaApp, VentanaPrincipal, Panel* (ABM de sedes), PanelVenta, FacturaDialog, SedeController, Estilo
-├── DatosIniciales   configuración y datos de ejemplo
-└── DemoFlujoCompra  flujo de compra completo por consola
+├── vista/               Pantallas Swing: BoleteriaApp, VentanaPrincipal, Panel* (ABM de sedes), PanelVenta,
+│                        FacturaDialog, FormularioSector, Estilo, Aviso. Solo arman la pantalla y muestran mensajes.
+├── controlador/         SedeController (ABM de sedes) y VentaController (compra en curso y reloj de la reserva).
+│                        Reciben lo que hace el usuario y se lo piden al modelo.
+├── modelo/              Todo el dominio y su persistencia
+│   ├── Boleteria        fachada del modelo (Singleton + Controlador GRASP)
+│   ├── infraestructura/ Sede, Sector, SectorNumerado, SectorGeneral, Asiento, SectorFactory
+│   ├── eventos/         Evento, Recital, Artista, Funcion, Preventa
+│   ├── ventas/          Cliente, Cuenta, Compra, Entrada, Cargo, PaqueteVIP, Pago, Devolucion, Factura
+│   ├── promociones/     Promocion
+│   ├── reglas/          ReglaDeVenta, NoDejarAsientoSuelto, RequiereCodigoPreventa
+│   ├── excepcion/       excepciones del negocio
+│   ├── enums/           EstadoFuncion, EstadoCompra, EstadoEntrada, MedioPago, TipoSector
+│   └── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo, FacturaArchivo
+├── DatosIniciales       configuración y datos de ejemplo
+└── DemoFlujoCompra      flujo de compra completo por consola
 ```
