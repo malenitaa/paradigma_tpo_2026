@@ -28,9 +28,11 @@ cuando pregunten "¿y por qué no lo hicieron de otra forma?". Usa los nombres d
 9. [Persistencia en archivos](#9-persistencia-en-archivos)
 10. [Relaciones del diagrama de clases](#10-relaciones-del-diagrama-de-clases)
 11. [Decisiones de implementación en Java](#11-decisiones-de-implementación-en-java)
-12. [Qué sacamos de la entrega 1 y por qué](#12-qué-sacamos-de-la-entrega-1-y-por-qué)
-13. [Limitaciones conocidas y lo que falta](#13-limitaciones-conocidas-y-lo-que-falta)
-14. [Preguntas probables en la defensa](#14-preguntas-probables-en-la-defensa)
+12. [La interfaz Swing: decisiones](#12-la-interfaz-swing-decisiones)
+13. [Qué sacamos de la entrega 1 y por qué](#13-qué-sacamos-de-la-entrega-1-y-por-qué)
+14. [Limitaciones conocidas y lo que falta](#14-limitaciones-conocidas-y-lo-que-falta)
+15. [Checklist del TPO completo](#15-checklist-del-tpo-completo-clase-14)
+16. [Preguntas probables en la defensa](#16-preguntas-probables-en-la-defensa)
 
 ---
 
@@ -53,7 +55,7 @@ y la reventa. El `Pago` registra el medio y el número de operación, no cobra.
 **Por qué acotamos.** La devolución de la entrega 1 pidió dos cosas: centrar el proyecto en la venta de
 entradas y armar el flujo de compra como un caso real. Sacamos lo que no sumaba a ese flujo
 (estacionamiento, experiencia inmersiva, precio dinámico) y agregamos lo que sí: reserva por tiempo,
-pago, factura, devolución, promociones y cuentas de usuario. El detalle está en la [sección 12](#12-qué-sacamos-de-la-entrega-1-y-por-qué).
+pago, factura, devolución, promociones y cuentas de usuario. El detalle está en la [sección 13](#13-qué-sacamos-de-la-entrega-1-y-por-qué).
 
 ---
 
@@ -106,6 +108,26 @@ controlador por caso de uso** (`SedeController`, `VentaController`) y se lo pasa
 pantalla implementa la interfaz `Pantalla` con un único método `alMostrar()`, que refresca los datos
 cada vez que se entra a esa pantalla (así, si diste de alta una sede, la consulta la muestra sin
 reiniciar).
+
+### Las capas como las da la cátedra (clase 14)
+
+La clase 14 dibuja cuatro capas más el armado: **vista**, **controlador**, **modelo**, **datos** y `app`
+(el `Main` que conecta todo), con la regla "cada capa solo conoce a la de abajo" y el ejemplo del
+consultorio (`VentanaTurnos` → `TurnoControlador` → `Turno` → `TurnoRepositorio`). Nuestro código
+mapea así:
+
+| Capa de la clase 14 | En el TPO | Diferencia a explicar |
+|---|---|---|
+| `vista` | `vista/` | Igual. |
+| `controlador` | `controlador/` | Igual, uno por caso de uso. |
+| `modelo` | `modelo/` (dominio + `Boleteria`) | Igual. |
+| `datos` | `modelo/persistencia/` | Lo pusimos como subpaquete del modelo porque `Repositorio<T>` es un contrato que el dominio define, y las implementaciones de archivo no se usan desde ningún otro lado. Separarlo en un paquete `datos` propio es mover archivos, no cambiar código. |
+| `app` | `vista/BoleteriaApp` + `DatosIniciales` en la raíz | `BoleteriaApp` arma la aplicación; `DatosIniciales` carga los archivos y registra reglas, cargos y promociones. |
+
+El punto que la cátedra remarca en el consultorio ("Main conecta las capas: el repositorio se inyecta
+en el controlador y el controlador en la vista") lo cumplimos a medias: `VentanaPrincipal` crea los
+controladores y se los inyecta a las pantallas por constructor, pero `Boleteria` crea sus repositorios
+adentro. Ver [sección 14](#14-limitaciones-conocidas-y-lo-que-falta).
 
 ---
 
@@ -264,7 +286,7 @@ modelo".
 - **Honestidad.** `Boleteria` todavía hace `new SedeRepositorioArchivo(...)` en su constructor. La
   dependencia es a la interfaz, pero la creación está adentro. Para inversión de dependencias completa
   habría que inyectar los repositorios por constructor; lo dejamos así para mantener el singleton simple.
-  Ver [sección 13](#13-limitaciones-conocidas-y-lo-que-falta).
+  Ver [sección 14](#14-limitaciones-conocidas-y-lo-que-falta).
 
 ### Herencia y polimorfismo — `Sector` y `Evento`
 
@@ -348,6 +370,28 @@ distinto que `catch (SeleccionInvalidaException ex)`).
 **Regla que seguimos:** el modelo lanza, el controlador deja todo consistente, la vista muestra.
 Ninguna pantalla decide qué es válido.
 
+### Lo que pide la clase 12 y cómo lo cumplimos
+
+La cátedra resume la decisión así: *checked* = "problemas externos previsibles: capturar y avisar al
+usuario"; *unchecked* = "errores de programación: corregir el código o validar antes". El integrador del
+cajero usa exactamente nuestro criterio: `SaldoInsuficienteException` es checked porque es un resultado
+posible del negocio, y `MontoInvalidoException` es unchecked porque un monto ≤ 0 es un dato inválido. En
+el TPO, `ReservaVencidaException` juega el papel de la primera e `IllegalArgumentException` el de la
+segunda. No creamos una clase propia para los datos inválidos porque `IllegalArgumentException` ya es,
+en palabras de la clase, "el tipo estándar que describe bien el error".
+
+| Buena práctica (clase 12) | En el código |
+|---|---|
+| Capturar la excepción más específica | Cada `catch` nombra el tipo. El único `catch (Exception)` está en `Estilo.aplicarGlobal()` al configurar el look & feel: si falla, Swing usa el que trae por defecto, y el bloque lo dice en un comentario. |
+| Varios `catch` y multi-catch | `PanelModificacionSede` separa `IllegalArgumentException \| IllegalStateException` de `IOException`. `VentaController.reservar` y `PanelVenta.reservar` usan multi-catch para `SeleccionInvalidaException \| IllegalStateException` porque las tratan igual. |
+| `finally` para dejar todo consistente | `VentaController.pagar`: pase lo que pase, `compra = null` en el `finally`. |
+| Encadenar con la causa (`new MiException(msg, causa)`) | `SedeRepositorioArchivo` envuelve el error de parseo en una `IOException` con la causa y el número de registro. `Cuenta.hashear` envuelve `NoSuchAlgorithmException` en `IllegalStateException` con la causa. |
+| try-with-resources para archivos | Los tres métodos que abren archivos (`SedeRepositorioArchivo.guardarTodos` y `leerLineas`, `ClienteRepositorioArchivo.guardarTodos`) usan `try (BufferedReader ...)` / `try (BufferedWriter ...)`. |
+| Mensajes claros al usuario, sin `printStackTrace` | No hay ningún `printStackTrace` en el proyecto. Las pantallas muestran `getMessage()` en la barra de aviso o en un diálogo. |
+| No usar excepciones para el flujo normal | Las consultas devuelven `boolean` u `Optional` (`Funcion.estaDisponible`, `buscarSede`, `Promocion.coincide`). La excepción se lanza solo cuando se intenta la operación igual. |
+| Excepciones propias con atributos útiles (como `faltante` en el cajero) | Las nuestras solo llevan el mensaje. Mejora posible: que `SeleccionInvalidaException` lleve el asiento que falló para que el mapa lo resalte. |
+| Validar antes de usar | Constructores que validan. `Funcion.estaDisponible` antes de `reservarAsientos`. |
+
 ---
 
 ## 8. El flujo de compra y la reserva de 5 minutos
@@ -425,6 +469,24 @@ carpeta `datos/` no existe, `DatosIniciales` la crea con datos de ejemplo.
 **Qué no se persiste todavía.** Eventos y funciones (se crean en memoria en `DatosIniciales`) y las
 compras. Queda para la entrega final.
 
+### Contraste con lo que muestra la clase 13
+
+La clase 13 fija el esquema que seguimos: "una línea por objeto, un archivo por clase", campos separados
+por un carácter, `split` al leer, `BufferedReader` y `BufferedWriter` con try-with-resources. Dos puntos
+donde elegimos distinto y conviene saber por qué:
+
+- **Línea mal formada.** La clase propone "informar la línea y seguir con las demás". En `sectores.txt`
+  preferimos cortar la carga con una `IOException` que dice el número de registro: si se ignora un sector
+  en silencio, la sede queda con menos capacidad y la venta sigue como si nada. `clientes.txt`, en
+  cambio, saltea las líneas con menos de cuatro campos. Son dos políticas distintas; la más defendible es
+  la primera, y unificar la segunda es un cambio de una línea.
+- **Dónde vive el formato de la línea.** En el integrador de la agenda, `Contacto.aLinea()` y
+  `Contacto.desdeLinea()` están en el modelo (Experto). Nosotros los pusimos en el repositorio
+  (`SedeRepositorioArchivo` arma y parsea las líneas) para que `Sede` y `Sector` no sepan que existe un
+  archivo ni un separador. El costo es que el repositorio conoce los getters y el constructor de las
+  clases; el beneficio es que cambiar a base de datos no toca el modelo. Lo único que el modelo sabe del
+  archivo es que el `|` está prohibido en los nombres.
+
 ---
 
 ## 10. Relaciones del diagrama de clases
@@ -478,7 +540,26 @@ Cosas del código que conviene poder justificar porque son temas de la materia:
 
 ---
 
-## 12. Qué sacamos de la entrega 1 y por qué
+## 12. La interfaz Swing: decisiones
+
+Lo que las clases 13 y 14 piden de una interfaz, y cómo está resuelto:
+
+| Tema | Decisión | Dónde |
+|---|---|---|
+| Hilo de Swing (EDT) | Toda la interfaz se crea dentro de `SwingUtilities.invokeLater`, como pide la cátedra. | `BoleteriaApp.main` |
+| Cuenta regresiva de 5 minutos | `javax.swing.Timer` y no un `Thread`: el `Timer` dispara su evento **en el EDT**, así que `tic()` puede tocar los componentes sin riesgo. Un `Thread` propio obligaría a volver al EDT a mano en cada tic. | `PanelVenta.timer` |
+| Tareas largas / `SwingWorker` | No hace falta: leer y escribir los `.txt` tarda milisegundos. Si la persistencia pasara a una base de datos remota, el guardado iría en un `SwingWorker` y `done()` mostraría el aviso. | — |
+| Tres formas de oyente (clase 14) | Lambdas para los botones (`ActionListener` es interfaz funcional). Clases anónimas que extienden `MouseAdapter` donde solo interesa un método: `mouseClicked` en "adelantar reloj", `mouseEntered` / `mouseExited` para el hover de los botones. Clase interna con nombre para el asiento (`BotonAsiento`), que necesita la selección del panel. | `PanelVenta`, `Estilo` |
+| Diálogos (la cátedra pide 3) | `showConfirmDialog` antes de dar de baja una sede, con `this` como padre para que sea **modal**. `showMessageDialog` de error si falla la carga inicial, con padre `null` porque todavía no existe la ventana. `FacturaDialog`, un `JDialog` propio `APPLICATION_MODAL` con la ventana como padre. | `PanelBajaSede`, `BoleteriaApp`, `FacturaDialog` |
+| Menú principal que navega entre ventanas | Barra lateral con `ItemMenu` + `CardLayout`: un solo `JFrame` y las pantallas como tarjetas, en vez de una ventana por ABM. La cátedra muestra `JMenuBar`; la barra lateral cumple la misma función y se parece más a una app de boletería. Agregar un `JMenuBar` con atajos (Ctrl+N alta, Ctrl+Q salir) es un cambio chico en `VentanaPrincipal` si lo piden. | `VentanaPrincipal` |
+| Refrescar al entrar | Interfaz `Pantalla.alMostrar()`: cada tarjeta recarga sus datos cuando se muestra, así la consulta ve la sede recién dada de alta. | `vista/Pantalla` |
+| Layouts | `BorderLayout` en la ventana (lateral `WEST`, contenido `CENTER`) y en casi todos los paneles; `GridLayout` y `GridBagLayout` en los formularios; `BoxLayout` para apilar; el mapa de asientos es una grilla de filas × asientos. | pantallas |
+| Look & feel | Cross-platform para que se vea igual en Mac y Windows. Colores y fuentes están en `Estilo` para no repetirlos en cada pantalla. | `Estilo.aplicarGlobal` |
+| Validar en la vista o en el modelo | La vista solo chequea lo que es de la vista (campo vacío antes de llamar, como en el consultorio de la clase 14). Las reglas de negocio las lanza el modelo y la vista las muestra. | todas |
+
+---
+
+## 13. Qué sacamos de la entrega 1 y por qué
 
 | Estaba en la entrega 1 | Qué pasó | Por qué |
 |---|---|---|
@@ -493,7 +574,7 @@ El diagrama v3 muestra el diseño acotado y el v4 es el que coincide con el cód
 
 ---
 
-## 13. Limitaciones conocidas y lo que falta
+## 14. Limitaciones conocidas y lo que falta
 
 Mejor decirlo que esperar a que lo encuentren:
 
@@ -513,7 +594,24 @@ Mejor decirlo que esperar a que lo encuentren:
 
 ---
 
-## 14. Preguntas probables en la defensa
+## 15. Checklist del TPO completo (clase 14)
+
+La última diapositiva de la clase 14 lista lo que tiene que tener el TPO terminado:
+
+| Pide la cátedra | Estado | Dónde |
+|---|---|---|
+| 12 clases o más | ✔ 33 clases y 5 enums en el modelo, más las de la vista | `modelo/`, `vista/` |
+| 3 patrones o buenas prácticas | ✔ Singleton, Strategy, Factory, Repository, MVC, GRASP | [sección 4](#4-los-patrones-uno-por-uno) |
+| 1 excepción propia y 3 try-catch | ✔ 4 propias; try/catch en 12 lugares | [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan) |
+| 6 interfaces Swing (4 ABM + 2 de negocio) | 4 ABM de sedes + Venta de entradas (negocio) + Inicio (portada). **Falta Devoluciones**; la lógica ya está en `Boleteria.devolverEntrada`. | `vista/` |
+| 3 diálogos | ✔ confirmación de baja, error de arranque, comprobante | [sección 12](#12-la-interfaz-swing-decisiones) |
+| Menú principal que navega entre ventanas | ✔ barra lateral + `CardLayout` | `VentanaPrincipal` |
+| Datos en archivos o BD | ✔ `datos/*.txt`. Falta persistir eventos, funciones y compras. | [sección 9](#9-persistencia-en-archivos) |
+| Documentación (10 páginas) | Borrador listo. Hay que actualizar su sección 8 al orden actual de paquetes. | [`entregas/entrega-final/`](entregas/entrega-final/) |
+
+---
+
+## 16. Preguntas probables en la defensa
 
 **¿Por qué `Boleteria` está en `modelo` si es "el controlador"?**
 Porque es el Controlador de GRASP (fachada que recibe las operaciones del sistema y delega), no el
@@ -568,6 +666,39 @@ porque falló un archivo.
 Son dos entidades con campos distintos y hay muchos sectores por sede. Un archivo por entidad es más
 simple de leer y de escribir que un formato anidado.
 
+**¿Por qué un `Timer` de Swing y no un `Thread` para la cuenta regresiva?**
+Porque el `Timer` de `javax.swing` ejecuta su acción en el hilo de eventos (EDT), el único desde el que
+se pueden tocar componentes. Con un `Thread` habría que volver al EDT con `invokeLater` en cada tic.
+Además el `Timer` solo repinta: el vencimiento real lo decide el modelo comparando fechas.
+
+**¿Por qué una barra lateral y no un `JMenuBar`?**
+Cumple lo mismo (navegar entre pantallas desde un lugar fijo) y se parece más a una aplicación de
+boletería. Son botones propios sobre un `CardLayout`. Si lo piden, un `JMenuBar` con atajos se agrega en
+`VentanaPrincipal` sin tocar las pantallas.
+
+**¿Qué pasa si una línea de `sectores.txt` está mal?**
+La carga falla con una `IOException` que dice el número de registro y la causa, y la app muestra el
+diálogo de error en vez de abrir. Preferimos eso a ignorar la línea porque un sector que falta cambia la
+capacidad y los precios.
+
+**¿Por qué el formato de archivo está en el repositorio y no en `Sede`?**
+Para que el modelo no conozca el medio de persistencia: `Sede` no sabe que existe un archivo. La cátedra
+muestra la otra opción (`Contacto.aLinea()`), que también es válida por Experto. Elegimos bajo
+acoplamiento entre el modelo y la persistencia.
+
+**¿Dónde está el hilo de Swing en el código?**
+`BoleteriaApp.main` arma todo dentro de `SwingUtilities.invokeLater`, y el diálogo del comprobante se
+abre también con `invokeLater` para que aparezca después de que la pantalla se actualizó.
+
 **¿Qué cambiarían si tuvieran más tiempo?**
 Tests JUnit del modelo, persistir compras y la secuencia de facturas, inyectar los repositorios en
 `Boleteria`, y la pantalla de devoluciones.
+
+---
+
+## Material de la cátedra en el que se apoya esta guía
+
+Clases 4 y 5 (relaciones y de diagrama a código), apunte "Relaciones entre clases", clase 8 (sobrecarga,
+sobrescritura, `protected`, GRASP), clase 10 (SOLID y GRASP, clases internas y anidadas), apunte "SOLID y
+GRASP", clase 11 (colecciones), clase 12 (excepciones), clase 13 (entrada y salida, paquetes, Swing) y
+clase 14 (arquitectura y MVC, eventos, menúes y diálogos, hilo de Swing).
