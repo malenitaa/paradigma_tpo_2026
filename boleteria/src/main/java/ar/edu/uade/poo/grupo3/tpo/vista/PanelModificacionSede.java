@@ -5,10 +5,9 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -17,6 +16,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Modificación de sede: cambiar nombre y dirección, y agregar o quitar sectores.
@@ -26,13 +26,13 @@ public class PanelModificacionSede extends JPanel implements Pantalla {
 
     private final SedeController controller;
     private final JComboBox<Sede> selector = new JComboBox<>();
-    private final JTextField nombre = Estilo.campo();
-    private final JTextField direccion = Estilo.campo();
+    private final JTextField nombre = new JTextField(20);
+    private final JTextField direccion = new JTextField(20);
     private final FormularioSector formulario = new FormularioSector();
     private final DefaultTableModel modeloSectores = FormularioSector.modeloSectores();
     private final JTable tablaSectores = FormularioSector.tablaSectores(modeloSectores);
-    private final JButton agregar = Estilo.boton("+ Agregar sector", Estilo.TipoBoton.SECUNDARIO);
-    private final JButton quitar = Estilo.boton("Quitar seleccionado", Estilo.TipoBoton.SECUNDARIO);
+    private final JButton agregar = new JButton("Agregar sector");
+    private final JButton quitar = new JButton("Quitar seleccionado");
     private final Aviso bloqueo = new Aviso();
     private final Aviso aviso = new Aviso();
     private boolean cargando;
@@ -40,68 +40,49 @@ public class PanelModificacionSede extends JPanel implements Pantalla {
     public PanelModificacionSede(SedeController controller) {
         super(new BorderLayout());
         this.controller = controller;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
 
-        JPanel norte = new JPanel(new BorderLayout(0, 0));
+        JPanel norte = new JPanel(new BorderLayout());
         norte.add(Estilo.encabezado("Modificación de sede",
                 "Elegí una sede para cambiar sus datos o sus sectores. Los cambios se guardan al instante."),
                 BorderLayout.NORTH);
-        JPanel eleccion = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        eleccion.add(Estilo.etiqueta("Sede a modificar   "));
-        selector.setPreferredSize(new Dimension(320, 36));
+        JPanel eleccion = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        eleccion.add(new JLabel("Sede a modificar"));
+        selector.setPreferredSize(new Dimension(320, 26));
         eleccion.add(selector);
-        eleccion.setBorder(BorderFactory.createEmptyBorder(0, 0, 18, 0));
+        eleccion.setBorder(BorderFactory.createEmptyBorder(0, 0, 16, 0));
         norte.add(eleccion, BorderLayout.CENTER);
         add(norte, BorderLayout.NORTH);
 
-        JPanel datos = new JPanel();
-        datos.setLayout(new BoxLayout(datos, BoxLayout.Y_AXIS));
-        datos.add(PanelAltaSede.alinear(Estilo.seccion("Datos de la sede")));
-        datos.add(Box.createVerticalStrut(14));
-        datos.add(PanelAltaSede.alinear(Estilo.etiqueta("Nombre")));
-        datos.add(Box.createVerticalStrut(4));
-        datos.add(PanelAltaSede.alinear(nombre));
-        datos.add(Box.createVerticalStrut(12));
-        datos.add(PanelAltaSede.alinear(Estilo.etiqueta("Dirección")));
-        datos.add(Box.createVerticalStrut(4));
-        datos.add(PanelAltaSede.alinear(direccion));
-        datos.add(Box.createVerticalStrut(16));
-        JButton guardarDatos = Estilo.boton("Guardar datos", Estilo.TipoBoton.PRIMARIO);
+        JButton guardarDatos = new JButton("Guardar datos");
         guardarDatos.addActionListener(e -> guardarDatos());
-        datos.add(PanelAltaSede.alinear(guardarDatos));
-        datos.add(Box.createVerticalGlue());
-        nombre.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        direccion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        JPanel datos = Estilo.columna(Estilo.seccion("Datos de la sede"),
+                new JLabel("Nombre"), nombre, new JLabel("Dirección"), direccion, guardarDatos);
         JPanel tarjetaDatos = Estilo.tarjeta(datos);
         tarjetaDatos.setPreferredSize(new Dimension(300, 0));
 
         agregar.addActionListener(e -> agregarSector());
         quitar.addActionListener(e -> quitarSector());
-        JPanel botones = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        botones.setOpaque(false);
+        JPanel botones = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         botones.add(agregar);
-        botones.add(Box.createHorizontalStrut(8));
         botones.add(quitar);
 
-        JPanel arriba = new JPanel(new BorderLayout(0, 12));
-        arriba.setOpaque(false);
         JPanel tituloYBloqueo = new JPanel(new BorderLayout(0, 8));
-        tituloYBloqueo.setOpaque(false);
         tituloYBloqueo.add(Estilo.seccion("Sectores"), BorderLayout.NORTH);
         tituloYBloqueo.add(bloqueo, BorderLayout.CENTER);
+        JPanel arriba = new JPanel(new BorderLayout(0, 10));
         arriba.add(tituloYBloqueo, BorderLayout.NORTH);
         arriba.add(formulario, BorderLayout.CENTER);
         arriba.add(botones, BorderLayout.SOUTH);
-        JPanel sectores = new JPanel(new BorderLayout(0, 14));
+        JPanel sectores = new JPanel(new BorderLayout(0, 12));
         sectores.add(arriba, BorderLayout.NORTH);
         sectores.add(Estilo.scroll(tablaSectores), BorderLayout.CENTER);
 
-        JPanel centro = new JPanel(new BorderLayout(18, 0));
-        centro.setOpaque(false);
+        JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(tarjetaDatos, BorderLayout.WEST);
         centro.add(Estilo.tarjeta(sectores), BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
-        add(PanelAltaSede.barraInferior(aviso), BorderLayout.SOUTH);
+        add(Estilo.barraInferior(aviso), BorderLayout.SOUTH);
 
         selector.addActionListener(e -> {
             if (!cargando) {
@@ -134,7 +115,7 @@ public class PanelModificacionSede extends JPanel implements Pantalla {
         boolean haySede = sede != null;
         nombre.setText(haySede ? sede.getNombre() : "");
         direccion.setText(haySede ? sede.getDireccion() : "");
-        FormularioSector.llenar(modeloSectores, haySede ? sede.getSectores() : java.util.List.of());
+        FormularioSector.llenar(modeloSectores, haySede ? sede.getSectores() : List.of());
         int funciones = haySede ? controller.funcionesActivas(sede) : 0;
         boolean editable = haySede && funciones == 0;
         formulario.setEnabled(editable);
@@ -186,7 +167,7 @@ public class PanelModificacionSede extends JPanel implements Pantalla {
             aviso.error("Seleccioná el sector que querés quitar.");
             return;
         }
-        String codigo = (String) modeloSectores.getValueAt(tablaSectores.convertRowIndexToModel(fila), 0);
+        String codigo = (String) modeloSectores.getValueAt(fila, 0);
         try {
             controller.quitarSector(sede, codigo);
             mostrarSede();

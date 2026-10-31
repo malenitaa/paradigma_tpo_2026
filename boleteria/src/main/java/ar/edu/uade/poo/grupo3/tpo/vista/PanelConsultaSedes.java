@@ -4,15 +4,14 @@ import ar.edu.uade.poo.grupo3.tpo.controlador.SedeController;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +20,10 @@ import java.util.List;
 public class PanelConsultaSedes extends JPanel implements Pantalla {
 
     private final SedeController controller;
-    private final JTextField buscador = Estilo.campo();
+    private final JTextField buscador = new JTextField(20);
     private final DefaultTableModel modeloSedes =
             Estilo.modeloTabla("Nombre", "Dirección", "Sectores", "Capacidad", "Funciones activas");
     private final JTable tablaSedes = Estilo.tabla(modeloSedes);
-    { Estilo.anchos(tablaSedes, 200, 300, 80, 100, 130); }
     private final DefaultTableModel modeloSectores = FormularioSector.modeloSectores();
     private final JLabel tituloSectores = Estilo.seccion("Sectores");
     private final List<Sede> visibles = new ArrayList<>();
@@ -33,38 +31,34 @@ public class PanelConsultaSedes extends JPanel implements Pantalla {
     public PanelConsultaSedes(SedeController controller) {
         super(new BorderLayout());
         this.controller = controller;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Consulta de sedes",
                 "Buscá una sede y mirá sus sectores, capacidad y cuánto multiplica el precio cada ubicación."),
                 BorderLayout.NORTH);
 
-        buscador.setPreferredSize(new Dimension(320, 36));
+        Estilo.anchos(tablaSedes, 200, 300, 80, 100, 130);
         buscador.setToolTipText("Buscar por nombre o dirección");
-        buscador.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { alMostrar(); }
-            public void removeUpdate(DocumentEvent e) { alMostrar(); }
-            public void changedUpdate(DocumentEvent e) { alMostrar(); }
-        });
-        JPanel barra = new JPanel(new BorderLayout(10, 0));
-        barra.setOpaque(false);
+        buscador.addActionListener(e -> alMostrar());
+        JButton buscar = new JButton("Buscar");
+        buscar.addActionListener(e -> alMostrar());
+        JPanel busqueda = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        busqueda.add(new JLabel("Buscar"));
+        busqueda.add(buscador);
+        busqueda.add(buscar);
+        JPanel barra = new JPanel(new BorderLayout());
         barra.add(Estilo.seccion("Sedes"), BorderLayout.WEST);
-        JPanel busqueda = new JPanel(new BorderLayout(8, 0));
-        busqueda.setOpaque(false);
-        busqueda.add(Estilo.etiqueta("Buscar"), BorderLayout.WEST);
-        busqueda.add(buscador, BorderLayout.CENTER);
         barra.add(busqueda, BorderLayout.EAST);
-        barra.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
+        barra.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         JPanel listado = new JPanel(new BorderLayout());
         listado.add(barra, BorderLayout.NORTH);
         listado.add(Estilo.scroll(tablaSedes), BorderLayout.CENTER);
 
-        JPanel detalle = new JPanel(new BorderLayout(0, 12));
+        JPanel detalle = new JPanel(new BorderLayout(0, 10));
         detalle.add(tituloSectores, BorderLayout.NORTH);
         detalle.add(Estilo.scroll(FormularioSector.tablaSectores(modeloSectores)), BorderLayout.CENTER);
 
-        JPanel centro = new JPanel(new GridLayout(2, 1, 0, 18));
-        centro.setOpaque(false);
+        JPanel centro = new JPanel(new GridLayout(2, 1, 0, 16));
         centro.add(Estilo.tarjeta(listado));
         centro.add(Estilo.tarjeta(detalle));
         add(centro, BorderLayout.CENTER);
@@ -98,7 +92,7 @@ public class PanelConsultaSedes extends JPanel implements Pantalla {
         if (fila < 0) {
             return;
         }
-        Sede sede = visibles.get(tablaSedes.convertRowIndexToModel(fila));
+        Sede sede = visibles.get(fila);
         tituloSectores.setText("Sectores de " + sede.getNombre());
         FormularioSector.llenar(modeloSectores, sede.getSectores());
     }

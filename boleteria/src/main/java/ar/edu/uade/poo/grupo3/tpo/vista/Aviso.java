@@ -3,32 +3,33 @@ package ar.edu.uade.poo.grupo3.tpo.vista;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 
-/** Mensaje en línea (éxito, error o información) que se muestra dentro de la pantalla. */
+/** Mensaje dentro de la pantalla (éxito, error o información): un JLabel con fondo de color. */
 public class Aviso extends JLabel {
 
-    private Color fondo = Estilo.FONDO;
+    private static final Color EXITO = new Color(0x1E7D3A);
+    private static final Color EXITO_FONDO = new Color(0xE4F5E8);
+    private static final Color ERROR = new Color(0xB42318);
+    private static final Color ERROR_FONDO = new Color(0xFBE9E7);
+    private static final Color INFO = new Color(0x8A5A00);
+    private static final Color INFO_FONDO = new Color(0xFFF4D6);
 
     public Aviso() {
-        setFont(Estilo.CUERPO);
-        setOpaque(false);
-        setBorder(BorderFactory.createEmptyBorder(9, 14, 9, 14));
+        setOpaque(true);
+        setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         setVisible(false);
     }
 
     public void exito(String mensaje) {
-        mostrar("✓  " + mensaje, Estilo.EXITO, Estilo.EXITO_SUAVE);
+        mostrar(mensaje, EXITO, EXITO_FONDO);
     }
 
     public void error(String mensaje) {
-        mostrar("✕  " + mensaje, Estilo.PELIGRO, Estilo.PELIGRO_SUAVE);
+        mostrar(mensaje, ERROR, ERROR_FONDO);
     }
 
     public void info(String mensaje) {
-        mostrar("i  " + mensaje, Estilo.AVISO, Estilo.AVISO_SUAVE);
+        mostrar(mensaje, INFO, INFO_FONDO);
     }
 
     public void ocultar() {
@@ -36,20 +37,9 @@ public class Aviso extends JLabel {
     }
 
     private void mostrar(String mensaje, Color texto, Color fondo) {
-        this.fondo = fondo;
         setForeground(texto);
-        setText("<html>" + mensaje.replace("<", "&lt;") + "</html>");
+        setBackground(fondo);
+        setText(mensaje);
         setVisible(true);
-        repaint();
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(fondo);
-        g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
-        g2.dispose();
-        super.paintComponent(g);
     }
 }

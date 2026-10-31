@@ -22,7 +22,6 @@ public class PanelBajaSede extends JPanel implements Pantalla {
     private final DefaultTableModel modelo =
             Estilo.modeloTabla("Nombre", "Dirección", "Sectores", "Capacidad", "Funciones activas");
     private final JTable tabla = Estilo.tabla(modelo);
-    { Estilo.anchos(tabla, 200, 300, 80, 100, 130); }
     private final JLabel detalle = Estilo.subtitulo("Seleccioná una sede de la lista.");
     private final Aviso aviso = new Aviso();
     private final List<Sede> sedes = new ArrayList<>();
@@ -30,20 +29,21 @@ public class PanelBajaSede extends JPanel implements Pantalla {
     public PanelBajaSede(SedeController controller) {
         super(new BorderLayout());
         this.controller = controller;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Baja de sede",
                 "Elegí la sede que querés dar de baja. Las sedes con funciones programadas no se pueden eliminar."),
                 BorderLayout.NORTH);
 
-        JPanel contenido = new JPanel(new BorderLayout(0, 14));
+        Estilo.anchos(tabla, 200, 300, 80, 100, 130);
+        JPanel contenido = new JPanel(new BorderLayout(0, 12));
         contenido.add(Estilo.seccion("Sedes registradas"), BorderLayout.NORTH);
         contenido.add(Estilo.scroll(tabla), BorderLayout.CENTER);
         contenido.add(detalle, BorderLayout.SOUTH);
         add(Estilo.tarjeta(contenido), BorderLayout.CENTER);
 
-        JButton eliminar = Estilo.boton("Dar de baja", Estilo.TipoBoton.PELIGRO);
+        JButton eliminar = new JButton("Dar de baja");
         eliminar.addActionListener(e -> darDeBaja());
-        add(PanelAltaSede.barraInferior(aviso, eliminar), BorderLayout.SOUTH);
+        add(Estilo.barraInferior(aviso, eliminar), BorderLayout.SOUTH);
 
         tabla.getSelectionModel().addListSelectionListener(e -> {
             Sede sede = seleccionada();
@@ -58,7 +58,7 @@ public class PanelBajaSede extends JPanel implements Pantalla {
 
     private Sede seleccionada() {
         int fila = tabla.getSelectedRow();
-        return fila < 0 ? null : sedes.get(tabla.convertRowIndexToModel(fila));
+        return fila < 0 ? null : sedes.get(fila);
     }
 
     @Override

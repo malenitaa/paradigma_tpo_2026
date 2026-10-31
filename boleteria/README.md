@@ -15,12 +15,12 @@ Requiere **Java 17 o superior**.
   `mvn compile exec:java -Dexec.mainClass=ar.edu.uade.poo.grupo3.tpo.DemoFlujoCompra`
 
 ### Probar una compra
-1. En la barra lateral, **Venta de entradas**.
+1. En el menú, **Ventas → Venta de entradas** (o Ctrl+V).
 2. Elegí función, sector (por ejemplo *FLR · Floor*) y cliente; marcá asientos en el mapa.
 3. **Reservar**: los asientos quedan en verde y arranca la cuenta regresiva de 5 minutos.
 4. Opcional: código promocional `FAN10` o `BANCO20` → **Aplicar**.
 5. Elegí el medio de pago y **Pagar**: se muestra el comprobante y se guarda en `datos/facturas/`.
-6. Para ver qué pasa si no pagás a tiempo: link *Demo: adelantar el reloj 5 minutos*.
+6. Para ver qué pasa si no pagás a tiempo: botón *Demo: adelantar el reloj 5 minutos*.
 7. Para ver una regla de venta: elegí asientos salteados (por ejemplo E-1 y E-3) y reservá.
 
 Cuentas de prueba: `ana@mail.com`, `bruno@mail.com`, `carla@mail.com` · contraseña `boleteria123`.
