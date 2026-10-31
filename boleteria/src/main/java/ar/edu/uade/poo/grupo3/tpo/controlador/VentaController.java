@@ -3,6 +3,7 @@ package ar.edu.uade.poo.grupo3.tpo.controlador;
 import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.MedioPago;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.ReservaVencidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.SeleccionInvalidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Asiento;
@@ -14,10 +15,13 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cliente;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Compra;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Devolucion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Controlador de la venta de entradas (patrón MVC): la pantalla le avisa qué hizo el usuario,
@@ -146,4 +150,27 @@ public class VentaController {
     public LocalDateTime ahora() {
         return LocalDateTime.now().plus(desfaseReloj);
     }
+
+
+    public Devolucion devolverEntrada(String codigoEntrada, String motivo) throws DevolucionNoPermitidaException {
+        try {
+            return boleteria.devolverEntrada(codigoEntrada, motivo, ahora());
+        } catch (DevolucionNoPermitidaException e) {
+            throw e;
+        } finally {
+            compra = null;
+        }
+    }
+
+    public Optional<Entrada> buscarEntrada(String codigo) {
+        try{
+        return boleteria.buscarEntrada(codigo);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al buscar entrada", e);
+        }
+    }
+
+
+
+
 }

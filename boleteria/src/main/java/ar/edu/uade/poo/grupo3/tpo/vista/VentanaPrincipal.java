@@ -48,6 +48,7 @@ public class VentanaPrincipal extends JFrame {
         registrar("modificacion", new PanelModificacionSede(sedes));
         registrar("baja", new PanelBajaSede(sedes));
         registrar("venta", new PanelVenta(ventas));
+        registrar("devolucion", new PanelDevolucion(ventas));
         contenido.setBackground(Estilo.FONDO);
 
         getContentPane().setLayout(new BorderLayout());
@@ -95,7 +96,7 @@ public class VentanaPrincipal extends JFrame {
         lateral.add(Box.createVerticalStrut(18));
         lateral.add(titulo("VENTAS"));
         lateral.add(item("venta", "Venta de entradas"));
-        lateral.add(proximamente("Devoluciones (entrega final)"));
+        lateral.add(item("devolucion","Devoluciones"));
         lateral.add(Box.createVerticalGlue());
 
         JLabel pie = new JLabel("<html>Datos guardados en<br>la carpeta <b>datos/</b></html>");
