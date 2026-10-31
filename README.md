@@ -6,6 +6,8 @@ por 5 minutos mientras se paga, hay preventa con código de acceso, promociones 
 
 ![Venta de entradas](capturas/07_venta_reservada.png)
 
+> **Para defenderlo:** [DEFENSA.md](DEFENSA.md) explica por qué el sistema está diseñado así: capas MVC, cada patrón, excepciones, relaciones y preguntas probables.
+
 ## Equipo
 
 | Integrante |
@@ -68,8 +70,8 @@ preventa `ORBITA26` · promociones `FAN10` (10 %) y `BANCO20` (20 %).
 |---|---|---|---|
 | [Parcial 1](entregas/entrega-1/) | 11/10 | Propuesta de negocio + diagrama de clases preliminar | Entregada |
 | [Parcial 2](entregas/entrega-2/) | 01/11 | Código, patrones, excepciones, ABM Swing y persistencia | En revisión del grupo |
-| Final | 18/11 | Las 6 pantallas, dialogs y documentación (≈10 páginas) | Pendiente |
-| Defensa | 04/12 | Exposición en tono de venta | Pendiente |
+| [Final](entregas/entrega-final/) | 18/11 | Las 6 pantallas, dialogs y documentación (≈10 páginas) | Documentación en borrador |
+| Defensa | 04/12 | Exposición en tono de venta · guía: [DEFENSA.md](DEFENSA.md) | Pendiente |
 
 ## Cómo trabajamos
 
