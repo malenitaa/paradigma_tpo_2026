@@ -1,0 +1,98 @@
+# boleteria/ — Proyecto Java
+
+Sistema de venta de entradas para sedes de espectáculos (inspirado en la Esfera de Las Vegas):
+el precio depende del piso y de la distancia al escenario, los asientos se reservan por 5 minutos,
+hay preventa con código, promociones por código, factura y devoluciones.
+
+## Cómo ejecutarlo
+
+Requiere **Java 17 o superior**.
+
+- **Doble click** en `Ejecutar Boleteria.command` (Mac): abre la aplicación Swing.
+- Desde la terminal, en esta carpeta (`boleteria/`): `java -jar Boleteria-TPO.jar`
+- Con Maven: `mvn compile exec:java` (abre la aplicación Swing).
+- Demo por consola del flujo de compra completo:
+  `mvn compile exec:java -Dexec.mainClass=ar.edu.uade.poo.grupo3.tpo.DemoFlujoCompra`
+
+### Probar una compra
+1. En la barra lateral, **Venta de entradas**.
+2. Elegí función, sector (por ejemplo *FLR · Floor*) y cliente; marcá asientos en el mapa.
+3. **Reservar**: los asientos quedan en verde y arranca la cuenta regresiva de 5 minutos.
+4. Opcional: código promocional `FAN10` o `BANCO20` → **Aplicar**.
+5. Elegí el medio de pago y **Pagar**: se muestra el comprobante y se guarda en `datos/facturas/`.
+6. Para ver qué pasa si no pagás a tiempo: link *Demo: adelantar el reloj 5 minutos*.
+7. Para ver una regla de venta: elegí asientos salteados (por ejemplo E-1 y E-3) y reservá.
+
+Cuentas de prueba: `ana@mail.com`, `bruno@mail.com`, `carla@mail.com` · contraseña `boleteria123`.
+Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN10` (10 %).
+
+## Qué incluye esta entrega
+
+| Pedido de la consigna | Dónde está |
+|---|---|
+| Código de las clases del diagrama (con los ajustes de la Entrega 1) | `src/main/java/ar/edu/uade/poo/grupo3/tpo` |
+| 4 pantallas Swing de ABM | Sedes: **Consulta**, **Alta**, **Modificación** y **Baja** (`ui/Panel*Sede*.java`) |
+| Adelanto: pantalla de **Venta de entradas** | `ui/PanelVenta.java` + `ui/FacturaDialog.java` (mapa de asientos, reserva de 5 min, promo, pago y factura) |
+| Persistencia en archivos de texto | carpeta `datos/` (ver abajo) |
+| Excepción personalizada del negocio | `excepcion/`: `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` |
+| Al menos 3 try/catch | ver tabla de try/catch |
+| Al menos 3 patrones implementados | ver tabla de patrones |
+
+## Ajustes respecto de la Entrega 1
+
+- Se quitaron `Estacionamiento`, `ExperienciaInmersiva`, `PrecioDinamico`/`PoliticaPrecio`, `Adicional` y `TipoCargo`
+  para centrar el proyecto en la venta de entradas.
+- Se agregaron: reserva de **5 minutos** (`Compra.MINUTOS_RESERVA`), `Pago` y `MedioPago`, `Devolucion`
+  (hasta 48 hs antes), `Factura`, `Promocion` por código, y registro de cuenta (`Cuenta`) con inicio de sesión.
+
+## Patrones y buenas prácticas implementados
+
+| Patrón | Dónde |
+|---|---|
+| **Singleton** | `controlador.Boleteria.getInstancia()` — una sola boletería en todo el sistema |
+| **Controlador (GRASP)** | `Boleteria` recibe todas las operaciones del sistema; `ui.SedeController` las del ABM |
+| **Strategy** | `reglas.ReglaDeVenta` (`NoDejarAsientoSuelto`, `RequiereCodigoPreventa`): la boletería valida la lista de reglas sin conocerlas |
+| **Factory** | `infraestructura.SectorFactory` crea los sectores (lo usan las pantallas y el repositorio) |
+| **Repository** | `persistencia.Repositorio<T>` con `SedeRepositorioArchivo` y `ClienteRepositorioArchivo` |
+| **MVC** | Vistas `ui.Panel*` → controlador `ui.SedeController` → modelo `Boleteria` |
+| **Creador / Experto (GRASP)** | `Compra` crea sus `Entrada`; `Funcion` sabe qué asientos están libres; `Sector` calcula su multiplicador |
+| **Herencia y polimorfismo** | `Sector` → `SectorNumerado` / `SectorGeneral` (`getCapacidad`, `calcularMultiplicador`); `Evento` → `Recital` |
+
+## Manejo de excepciones (try/catch)
+
+1. `ui.PanelAltaSede.guardar()` — datos inválidos (`IllegalArgumentException`) y error al escribir el archivo (`IOException`).
+2. `ui.PanelModificacionSede` — sede con funciones programadas (`IllegalStateException`) y `IOException` al guardar.
+3. `ui.PanelBajaSede.darDeBaja()` — no se puede dar de baja una sede con funciones (`IllegalStateException`) y `IOException`.
+4. `ui.BoleteriaApp` — error al leer los archivos de `datos/` al iniciar.
+5. `controlador.Boleteria.confirmarCompra()` — si falla guardar la factura, la venta no se pierde.
+6. `DemoFlujoCompra` — `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` y `AutenticacionException`.
+
+## Archivos de datos (`datos/`)
+
+| Archivo | Formato |
+|---|---|
+| `sedes.txt` | `nombre|direccion` |
+| `sectores.txt` | `sede|NUM|codigo|nombre|piso|distancia|filasXasientos` o `sede|GEN|codigo|nombre|piso|distancia|capacidad` |
+| `clientes.txt` | `dni|nombre|email|hashContraseña` (SHA-256, nunca la contraseña) |
+| `facturas/FAC-*.txt` | un comprobante por compra confirmada |
+
+Si la carpeta `datos/` no existe, se crea con datos de ejemplo. Los eventos y funciones todavía se cargan en memoria
+(`DatosIniciales`); su persistencia y la pantalla de devoluciones quedan para la entrega final.
+
+## Estructura del código
+
+```
+ar.edu.uade.poo.grupo3.tpo
+├── controlador/     Boleteria (Singleton + Controlador)
+├── infraestructura/ Sede, Sector, SectorNumerado, SectorGeneral, Asiento, SectorFactory
+├── eventos/         Evento, Recital, Artista, Funcion, Preventa
+├── ventas/          Cliente, Cuenta, Compra, Entrada, Cargo, PaqueteVIP, Pago, Devolucion, Factura
+├── promociones/     Promocion
+├── reglas/          ReglaDeVenta, NoDejarAsientoSuelto, RequiereCodigoPreventa
+├── excepcion/       excepciones del negocio
+├── enums/           EstadoFuncion, EstadoCompra, EstadoEntrada, MedioPago, TipoSector
+├── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo, FacturaArchivo
+├── ui/              BoleteriaApp, VentanaPrincipal, Panel* (ABM de sedes), PanelVenta, FacturaDialog, SedeController, Estilo
+├── DatosIniciales   configuración y datos de ejemplo
+└── DemoFlujoCompra  flujo de compra completo por consola
+```
