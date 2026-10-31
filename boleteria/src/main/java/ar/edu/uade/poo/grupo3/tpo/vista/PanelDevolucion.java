@@ -40,7 +40,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(columnaMapa(), BorderLayout.CENTER);
         JPanel resumen = Estilo.tarjeta(columnaResumen());
-        Border lineBorder = BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1);
+        Border lineBorder = BorderFactory.createLineBorder(Color.GRAY, 1);
         motivoDevolucion.setBorder(lineBorder);
         resumen.setPreferredSize(new Dimension(330, 0));
         centro.add(resumen, BorderLayout.EAST);
