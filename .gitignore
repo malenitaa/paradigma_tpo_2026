@@ -1,8 +1,8 @@
-  target/
-  out/
-  *.class
-  .idea/
-  *.iml
-  .vscode/
-  .DS_Store
-  boleteria/datos/facturas/
+target/
+out/
+*.class
+.idea/
+*.iml
+.vscode/
+.DS_Store
+boleteria/datos/facturas/
