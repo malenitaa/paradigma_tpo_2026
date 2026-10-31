@@ -132,6 +132,14 @@ public class Compra {
         }
         this.pago = pago;
         entradas.forEach(Entrada::pagar);
+        double precioDescontado;
+
+        if (promocion != null && promocion.aplicaA(this)) {
+            precioDescontado = promocion.calcularDescuento(this);
+        } else {
+            precioDescontado = 0;
+        }
+        entradas.forEach(entrada -> entrada.setvalorPagado(entrada.getPrecio()-precioDescontado));
         estado = EstadoCompra.CONFIRMADA;
         cliente.agregarCompra(this);
     }
