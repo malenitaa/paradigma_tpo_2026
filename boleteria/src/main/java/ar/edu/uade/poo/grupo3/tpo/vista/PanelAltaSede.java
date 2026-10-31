@@ -5,15 +5,13 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.IOException;
@@ -24,8 +22,8 @@ import java.util.List;
 public class PanelAltaSede extends JPanel implements Pantalla {
 
     private final SedeController controller;
-    private final JTextField nombre = Estilo.campo();
-    private final JTextField direccion = Estilo.campo();
+    private final JTextField nombre = new JTextField(20);
+    private final JTextField direccion = new JTextField(20);
     private final FormularioSector formulario = new FormularioSector();
     private final DefaultTableModel modeloSectores = FormularioSector.modeloSectores();
     private final JTable tablaSectores = FormularioSector.tablaSectores(modeloSectores);
@@ -35,58 +33,42 @@ public class PanelAltaSede extends JPanel implements Pantalla {
     public PanelAltaSede(SedeController controller) {
         super(new BorderLayout());
         this.controller = controller;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Alta de sede",
                 "Cargá los datos de la sede y armá sus sectores. Necesita al menos un sector para guardarse."),
                 BorderLayout.NORTH);
 
-        JPanel datos = new JPanel();
-        datos.setLayout(new BoxLayout(datos, BoxLayout.Y_AXIS));
-        datos.add(alinear(Estilo.seccion("1. Datos de la sede")));
-        datos.add(Box.createVerticalStrut(14));
-        datos.add(alinear(Estilo.etiqueta("Nombre")));
-        datos.add(Box.createVerticalStrut(4));
-        datos.add(alinear(nombre));
-        datos.add(Box.createVerticalStrut(12));
-        datos.add(alinear(Estilo.etiqueta("Dirección")));
-        datos.add(Box.createVerticalStrut(4));
-        datos.add(alinear(direccion));
-        datos.add(Box.createVerticalGlue());
-        nombre.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        direccion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        JPanel datos = Estilo.columna(Estilo.seccion("1. Datos de la sede"),
+                new JLabel("Nombre"), nombre, new JLabel("Dirección"), direccion);
         JPanel tarjetaDatos = Estilo.tarjeta(datos);
         tarjetaDatos.setPreferredSize(new Dimension(300, 0));
 
-        JButton agregar = Estilo.boton("+ Agregar sector", Estilo.TipoBoton.SECUNDARIO);
+        JButton agregar = new JButton("Agregar sector");
         agregar.addActionListener(e -> agregarSector());
-        JButton quitar = Estilo.boton("Quitar seleccionado", Estilo.TipoBoton.SECUNDARIO);
+        JButton quitar = new JButton("Quitar seleccionado");
         quitar.addActionListener(e -> quitarSector());
-        JPanel botonesSector = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        botonesSector.setOpaque(false);
+        JPanel botonesSector = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         botonesSector.add(agregar);
-        botonesSector.add(Box.createHorizontalStrut(8));
         botonesSector.add(quitar);
 
-        JPanel arriba = new JPanel(new BorderLayout(0, 12));
-        arriba.setOpaque(false);
+        JPanel arriba = new JPanel(new BorderLayout(0, 10));
         arriba.add(Estilo.seccion("2. Sectores"), BorderLayout.NORTH);
         arriba.add(formulario, BorderLayout.CENTER);
         arriba.add(botonesSector, BorderLayout.SOUTH);
-        JPanel sectoresPanel = new JPanel(new BorderLayout(0, 14));
+        JPanel sectoresPanel = new JPanel(new BorderLayout(0, 12));
         sectoresPanel.add(arriba, BorderLayout.NORTH);
         sectoresPanel.add(Estilo.scroll(tablaSectores), BorderLayout.CENTER);
 
-        JPanel centro = new JPanel(new BorderLayout(18, 0));
-        centro.setOpaque(false);
+        JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(tarjetaDatos, BorderLayout.WEST);
         centro.add(Estilo.tarjeta(sectoresPanel), BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
 
-        JButton limpiar = Estilo.boton("Limpiar", Estilo.TipoBoton.SECUNDARIO);
+        JButton limpiar = new JButton("Limpiar");
         limpiar.addActionListener(e -> limpiarTodo());
-        JButton guardar = Estilo.boton("Guardar sede", Estilo.TipoBoton.PRIMARIO);
+        JButton guardar = new JButton("Guardar sede");
         guardar.addActionListener(e -> guardar());
-        add(barraInferior(aviso, limpiar, guardar), BorderLayout.SOUTH);
+        add(Estilo.barraInferior(aviso, limpiar, guardar), BorderLayout.SOUTH);
     }
 
     private void agregarSector() {
@@ -112,7 +94,7 @@ public class PanelAltaSede extends JPanel implements Pantalla {
             aviso.error("Seleccioná el sector que querés quitar.");
             return;
         }
-        sectores.remove(tablaSectores.convertRowIndexToModel(fila));
+        sectores.remove(fila);
         FormularioSector.llenar(modeloSectores, sectores);
         aviso.ocultar();
     }
@@ -142,28 +124,5 @@ public class PanelAltaSede extends JPanel implements Pantalla {
     @Override
     public void alMostrar() {
         nombre.requestFocusInWindow();
-    }
-
-    static JPanel barraInferior(Aviso aviso, JButton... botones) {
-        JPanel barra = new JPanel(new BorderLayout(16, 0));
-        barra.setBorder(BorderFactory.createEmptyBorder(18, 0, 0, 0));
-        barra.add(aviso, BorderLayout.CENTER);
-        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        derecha.setOpaque(false);
-        for (int i = 0; i < botones.length; i++) {
-            if (i > 0) {
-                derecha.add(Box.createHorizontalStrut(10));
-            }
-            derecha.add(botones[i]);
-        }
-        barra.add(derecha, BorderLayout.EAST);
-        return barra;
-    }
-
-    static <T extends java.awt.Component> T alinear(T componente) {
-        if (componente instanceof javax.swing.JComponent j) {
-            j.setAlignmentX(Component.LEFT_ALIGNMENT);
-        }
-        return componente;
     }
 }

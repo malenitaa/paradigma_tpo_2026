@@ -382,7 +382,7 @@ en palabras de la clase, "el tipo estándar que describe bien el error".
 
 | Buena práctica (clase 12) | En el código |
 |---|---|
-| Capturar la excepción más específica | Cada `catch` nombra el tipo. El único `catch (Exception)` está en `Estilo.aplicarGlobal()` al configurar el look & feel: si falla, Swing usa el que trae por defecto, y el bloque lo dice en un comentario. |
+| Capturar la excepción más específica | Cada `catch` nombra el tipo. El único `catch (Exception)` está en `Estilo.aplicarGlobal()` al configurar el look & feel: `setLookAndFeel` declara cuatro excepciones chequeadas distintas y la reacción es la misma para todas (avisar por consola y seguir con el look & feel por defecto). |
 | Varios `catch` y multi-catch | `PanelModificacionSede` separa `IllegalArgumentException \| IllegalStateException` de `IOException`. `VentaController.reservar` y `PanelVenta.reservar` usan multi-catch para `SeleccionInvalidaException \| IllegalStateException` porque las tratan igual. |
 | `finally` para dejar todo consistente | `VentaController.pagar`: pase lo que pase, `compra = null` en el `finally`. |
 | Encadenar con la causa (`new MiException(msg, causa)`) | `SedeRepositorioArchivo` envuelve el error de parseo en una `IOException` con la causa y el número de registro. `Cuenta.hashear` envuelve `NoSuchAlgorithmException` en `IllegalStateException` con la causa. |
@@ -525,10 +525,10 @@ Cosas del código que conviene poder justificar porque son temas de la materia:
   referencias y dos `new Asiento("A", 1)` serían distintos.
 - **Enums con comportamiento.** `EstadoEntrada.estaActiva()`, `MedioPago` y `TipoSector` con descripción
   y `toString()` para mostrarlos en los combos sin un `switch` en la vista.
-- **Clases internas (clase 10).** `PanelVenta.BotonAsiento` es una clase interna (no estática) porque
-  necesita la selección y el aviso del panel; `PanelVenta.Escenario` y `VentanaPrincipal.ItemMenu` son
-  anidadas estáticas porque no usan nada de la instancia. Clases anónimas para el renderer del combo y el
-  ícono de la leyenda; lambdas para los listeners.
+- **Clases internas (clase 10).** `PanelVenta.OyenteAsiento` es una clase interna (no estática) que
+  implementa `ActionListener`: guarda qué asiento representa y, al hacer click, llama a `alternar()` del
+  panel. Clase anónima en `Estilo.modeloTabla()` (un `DefaultTableModel` que sobrescribe `isCellEditable`)
+  y en el oyente de "Acerca de"; lambdas para el resto de los listeners.
 - **Sobrecarga y sobrescritura (clase 8).** `Boleteria.reservarAsientos` está **sobrecargado**: una versión
   recibe `SectorNumerado` y lista de asientos, la otra `SectorGeneral` y cantidad. `SectorGeneral`
   **sobrescribe** `calcularMultiplicador()` y llama a `super`.
@@ -549,12 +549,13 @@ Lo que las clases 13 y 14 piden de una interfaz, y cómo está resuelto:
 | Hilo de Swing (EDT) | Toda la interfaz se crea dentro de `SwingUtilities.invokeLater`, como pide la cátedra. | `BoleteriaApp.main` |
 | Cuenta regresiva de 5 minutos | `javax.swing.Timer` y no un `Thread`: el `Timer` dispara su evento **en el EDT**, así que `tic()` puede tocar los componentes sin riesgo. Un `Thread` propio obligaría a volver al EDT a mano en cada tic. | `PanelVenta.timer` |
 | Tareas largas / `SwingWorker` | No hace falta: leer y escribir los `.txt` tarda milisegundos. Si la persistencia pasara a una base de datos remota, el guardado iría en un `SwingWorker` y `done()` mostraría el aviso. | — |
-| Tres formas de oyente (clase 14) | Lambdas para los botones (`ActionListener` es interfaz funcional). Clases anónimas que extienden `MouseAdapter` donde solo interesa un método: `mouseClicked` en "adelantar reloj", `mouseEntered` / `mouseExited` para el hover de los botones. Clase interna con nombre para el asiento (`BotonAsiento`), que necesita la selección del panel. | `PanelVenta`, `Estilo` |
+| Tres formas de oyente (clase 14) | **Lambda** para los botones y los ítems de menú (`ActionListener` es interfaz funcional). **Clase anónima** en el ítem "Acerca de" de `VentanaPrincipal`. **Clase interna con nombre** `OyenteAsiento` en `PanelVenta`: cada botón del mapa recibe un oyente que sabe qué `Asiento` representa. Las tres hacen lo mismo; la lambda es la más corta y la clase con nombre sirve cuando el oyente necesita guardar datos. | `PanelVenta`, `VentanaPrincipal` |
 | Diálogos (la cátedra pide 3) | `showConfirmDialog` antes de dar de baja una sede, con `this` como padre para que sea **modal**. `showMessageDialog` de error si falla la carga inicial, con padre `null` porque todavía no existe la ventana. `FacturaDialog`, un `JDialog` propio `APPLICATION_MODAL` con la ventana como padre. | `PanelBajaSede`, `BoleteriaApp`, `FacturaDialog` |
-| Menú principal que navega entre ventanas | Barra lateral con `ItemMenu` + `CardLayout`: un solo `JFrame` y las pantallas como tarjetas, en vez de una ventana por ABM. La cátedra muestra `JMenuBar`; la barra lateral cumple la misma función y se parece más a una app de boletería. Agregar un `JMenuBar` con atajos (Ctrl+N alta, Ctrl+Q salir) es un cambio chico en `VentanaPrincipal` si lo piden. | `VentanaPrincipal` |
+| Menú principal que navega entre ventanas | `JMenuBar` como en la clase 14, con los menús **Inicio**, **Sedes** (Consulta, Alta, Modificación, Baja), **Ventas** y **Ayuda**; cada `JMenuItem` tiene su `setAccelerator` (Ctrl+1 a Ctrl+4 para el ABM, Ctrl+V venta, Ctrl+Q salir) y hay un `addSeparator` antes de Salir. Las pantallas son tarjetas de un `CardLayout` en un solo `JFrame`: el menú llama a `ir(id)`, que muestra la tarjeta. Devoluciones figura deshabilitado (`setEnabled(false)`) hasta la entrega final. | `VentanaPrincipal.crearMenu` |
 | Refrescar al entrar | Interfaz `Pantalla.alMostrar()`: cada tarjeta recarga sus datos cuando se muestra, así la consulta ve la sede recién dada de alta. | `vista/Pantalla` |
-| Layouts | `BorderLayout` en la ventana (lateral `WEST`, contenido `CENTER`) y en casi todos los paneles; `GridLayout` y `GridBagLayout` en los formularios; `BoxLayout` para apilar; el mapa de asientos es una grilla de filas × asientos. | pantallas |
-| Look & feel | Cross-platform para que se vea igual en Mac y Windows. Colores y fuentes están en `Estilo` para no repetirlos en cada pantalla. | `Estilo.aplicarGlobal` |
+| Layouts | Solo los tres de la clase 13. `BorderLayout` en la ventana y en casi todos los paneles (encabezado `NORTH`, contenido `CENTER`, barra de botones `SOUTH`); `GridLayout` en el formulario de sector (3 × 6), en las métricas del inicio (1 × 4) y en el mapa de asientos (una fila por letra, una columna por asiento más la etiqueta de la fila); `FlowLayout` para alinear botones. `Estilo.columna()` apila componentes con un `GridLayout` de una columna dentro del `NORTH` de un `BorderLayout`, para que no se estiren. | pantallas |
+| Componentes estándar, sin dibujo propio | Todo son componentes de la clase 13: los asientos son `JButton` con `setBackground` según el estado (libre, seleccionado, reservado, ocupado); el escenario y los avisos son `JLabel` opacos con fondo; las tablas son `JTable` + `DefaultTableModel`; los números son `JSpinner`. No hay `paintComponent` ni `Graphics` en la vista. | `PanelVenta`, `Aviso` |
+| Look & feel | Cross-platform (`UIManager.setLookAndFeel`) para que se vea igual en Mac y Windows y para que `setBackground` pinte los botones del mapa (el look & feel nativo de Mac lo ignora). Las fuentes y los armados repetidos (encabezado, tarjeta, tabla, barra inferior) están en `Estilo` para no copiarlos en cada pantalla. | `Estilo` |
 | Validar en la vista o en el modelo | La vista solo chequea lo que es de la vista (campo vacío antes de llamar, como en el consultorio de la clase 14). Las reglas de negocio las lanza el modelo y la vista las muestra. | todas |
 
 ---
@@ -605,7 +606,7 @@ La última diapositiva de la clase 14 lista lo que tiene que tener el TPO termin
 | 1 excepción propia y 3 try-catch | ✔ 4 propias; try/catch en 12 lugares | [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan) |
 | 6 interfaces Swing (4 ABM + 2 de negocio) | 4 ABM de sedes + Venta de entradas (negocio) + Inicio (portada). **Falta Devoluciones**; la lógica ya está en `Boleteria.devolverEntrada`. | `vista/` |
 | 3 diálogos | ✔ confirmación de baja, error de arranque, comprobante | [sección 12](#12-la-interfaz-swing-decisiones) |
-| Menú principal que navega entre ventanas | ✔ barra lateral + `CardLayout` | `VentanaPrincipal` |
+| Menú principal que navega entre ventanas | ✔ `JMenuBar` (Inicio / Sedes / Ventas / Ayuda, con atajos) + `CardLayout` | `VentanaPrincipal` |
 | Datos en archivos o BD | ✔ `datos/*.txt`. Falta persistir eventos, funciones y compras. | [sección 9](#9-persistencia-en-archivos) |
 | Documentación (10 páginas) | Borrador listo. Hay que actualizar su sección 8 al orden actual de paquetes. | [`entregas/entrega-final/`](entregas/entrega-final/) |
 
@@ -671,10 +672,16 @@ Porque el `Timer` de `javax.swing` ejecuta su acción en el hilo de eventos (EDT
 se pueden tocar componentes. Con un `Thread` habría que volver al EDT con `invokeLater` en cada tic.
 Además el `Timer` solo repinta: el vencimiento real lo decide el modelo comparando fechas.
 
-**¿Por qué una barra lateral y no un `JMenuBar`?**
-Cumple lo mismo (navegar entre pantallas desde un lugar fijo) y se parece más a una aplicación de
-boletería. Son botones propios sobre un `CardLayout`. Si lo piden, un `JMenuBar` con atajos se agrega en
-`VentanaPrincipal` sin tocar las pantallas.
+**¿Por qué un solo `JFrame` con `CardLayout` y no una ventana por ABM?**
+El `JMenuBar` navega entre pantallas que viven en la misma ventana como tarjetas; `ir(id)` muestra la
+tarjeta y antes llama a `alMostrar()` para que recargue sus datos. Así la consulta ve la sede recién dada
+de alta sin abrir ni cerrar ventanas. Cada pantalla es un `JPanel` independiente, como las de la clase 13.
+
+**¿Cómo está hecho el mapa de asientos?**
+Es un `JPanel` con `GridLayout`: una fila por letra y una columna por asiento. Cada asiento es un `JButton`
+común con `setBackground` según su estado y un oyente `OyenteAsiento` que guarda el asiento. Al hacer click
+se agrega o saca de un `LinkedHashSet` y se vuelve a dibujar el mapa. Si hay una compra en curso, los
+botones se deshabilitan.
 
 **¿Qué pasa si una línea de `sectores.txt` está mal?**
 La carga falla con una `IOException` que dice el número de registro y la causa, y la app muestra el
