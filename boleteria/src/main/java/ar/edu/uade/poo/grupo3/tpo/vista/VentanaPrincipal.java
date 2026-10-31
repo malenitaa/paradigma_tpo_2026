@@ -43,7 +43,7 @@ public class VentanaPrincipal extends JFrame {
         registrar("baja", new PanelBajaSede(sedes));
         registrar("venta", new PanelVenta(ventas));
         registrar("devolucion", new PanelDevolucion(ventas));
-        contenido.setBackground(Estilo.FONDO);
+        ///contenido.setBackground(Estilo.FONDO);
 
         setJMenuBar(crearMenu());
         add(contenido, BorderLayout.CENTER);
@@ -75,9 +75,9 @@ public class VentanaPrincipal extends JFrame {
 
         JMenu ventas = new JMenu("Ventas");
         ventas.add(item("Venta de entradas", KeyEvent.VK_V, () -> ir("venta")));
-        JMenuItem devoluciones = new JMenuItem("Devoluciones (entrega final)");
-        devoluciones.setEnabled(false);
-        ventas.add(devoluciones);
+        ventas.add(item("Devoluciones", KeyEvent.VK_D, () -> ir("devolucion")));
+        //devoluciones.setEnabled(true);
+        ///ventas.add(devoluciones);
 
         JMenu ayuda = new JMenu("Ayuda");
         JMenuItem acercaDe = new JMenuItem("Acerca de...");

@@ -90,27 +90,6 @@ public final class Estilo {
         return tarjeta;
     }
 
-    public static JTextField campo() {
-        JTextField campo = new JTextField();
-        campo.setFont(CUERPO);
-        campo.setBorder(bordeCampo());
-        campo.setPreferredSize(new Dimension(220, 36));
-        return campo;
-    }
-
-    public static JTextField campoXL() {
-        JTextField campo = new JTextField();
-        campo.setFont(CUERPO);
-        campo.setBorder(bordeCampo());
-        campo.setPreferredSize(new Dimension(400, 76));
-        return campo;
-    }
-
-    public static Border bordeCampo() {
-        return BorderFactory.createCompoundBorder(new BordeRedondeado(BORDE, 8),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10));
-    }
-
     /** Componentes apilados de arriba hacia abajo (una columna de GridLayout) que no se estiran al fondo. */
     public static JPanel columna(JComponent... componentes) {
         JPanel grilla = new JPanel(new GridLayout(0, 1, 0, 6));

@@ -6,128 +6,131 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Asiento;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorGeneral;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorNumerado;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.*;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Pantalla de  Devolucion
+ * Pantalla de venta: se elige función y sector, se marcan asientos en el mapa, se reservan por
+ * 5 minutos y se pagan. Al pagar se muestra la factura.
+ * Es solo la vista: la compra en curso y el reloj de la reserva los lleva el VentaController.
  */
 public class PanelDevolucion extends JPanel implements Pantalla {
 
-    private static final java.time.format.DateTimeFormatter FECHA =
-            java.time.format.DateTimeFormatter.ofPattern("EEE dd/MM HH:mm", new java.util.Locale("es", "AR"));
     private static final Color LIBRE = Color.WHITE;
-    private static final Color OCUPADO = new Color(0xC9CBD3);
-    private static final Color MIO = new Color(0x15803D);
+    private static final Color OCUPADO = Color.LIGHT_GRAY;
+    private static final Color SELECCIONADO = new Color(0x3F51B5);
+    private static final Color MIO = new Color(0x2E7D32);
+
     private final VentaController controlador;
     private final JComboBox<Funcion> funciones = new JComboBox<>();
     private final JComboBox<Sector> sectores = new JComboBox<>();
     private final JComboBox<Cliente> clientes = new JComboBox<>();
+    private final JTextField codigoPreventa = new JTextField(10);
+    private final JLabel avisoPreventa = Estilo.subtitulo(" ");
+    private final JPanel mapa = new JPanel();
     private final JSpinner cantidad = new JSpinner(new SpinnerNumberModel(2, 1, 10, 1));
-    private final JLabel detalle = Estilo.subtitulo("Detalle de la devolución.");
-    private final JTextField codigoEntrada = Estilo.campo();
-    private final JTextField motivoDevolucion = Estilo.campoXL();
-    private final JButton verificarEntrada = Estilo.boton("Verificar", Estilo.TipoBoton.SECUNDARIO);
-    private final JLabel subtotal = valor();
-    private final JButton devolucion = Estilo.boton("Efectuar Devolución", Estilo.TipoBoton.PRIMARIO);
+
+    private final JLabel detalle = Estilo.subtitulo("Detalle del reembolso.");
+    private final JLabel precioUnitario = Estilo.subtitulo(" ");
+    private final JCheckBox paqueteVip = new JCheckBox();
+    private final JTextField codigoEntrada = new JTextField(10);
+    private final JTextArea motivoDevolucion = new JTextArea(4, 20);
+    private final JButton aplicarPromo = new JButton("Aplicar");
+    private final JLabel reembolso = new JLabel("—");
+    private final JLabel descuento = new JLabel("—");
+    private final JLabel cargos = new JLabel("—");
+    private final JLabel total = new JLabel("—");
+    private final JLabel reloj = new JLabel(" ");
+    private final JComboBox<MedioPago> medioPago = new JComboBox<>(MedioPago.values());
+    private final JButton reservar = new JButton("Reservar");
+    private final JButton pagar = new JButton("Pagar");
+    private final JButton cancelar = new JButton("Cancelar");
+    private final JButton verificarEntrada = new JButton("Verificar Entrada");
     private final Aviso aviso = new Aviso();
+
+    private final Set<Asiento> seleccion = new LinkedHashSet<>();
+    //private final Timer timer = new Timer(1000, e -> tic());
     private boolean cargando;
 
     public PanelDevolucion(VentaController controlador) {
         super(new BorderLayout());
         this.controlador = controlador;
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Devolución de entradas",
-                "Ingrese los siguientes datos para realizar la devolución:"),
+                "Ingresa los datos para proceder con la devolución de entradas:"),
                 BorderLayout.NORTH);
 
-        JPanel centro = new JPanel(new BorderLayout(18, 0));
-        centro.setOpaque(false);
-        centro.add(columnaDevolucion(), BorderLayout.CENTER);
-        JComponent resumen = Estilo.tarjeta(columnaResumen());
+        JPanel centro = new JPanel(new BorderLayout(16, 0));
+        centro.add(columnaMapa(), BorderLayout.CENTER);
+        JPanel resumen = Estilo.tarjeta(columnaResumen());
+
+        Border lineBorder = BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1);
+        motivoDevolucion.setBorder(lineBorder);
+
         resumen.setPreferredSize(new Dimension(330, 0));
         centro.add(resumen, BorderLayout.EAST);
         add(centro, BorderLayout.CENTER);
-        add(PanelAltaSede.barraInferior(aviso), BorderLayout.SOUTH);
+        add(Estilo.barraInferior(aviso), BorderLayout.SOUTH);
 
-        devolucion.addActionListener(e -> {
-            if (!cargando) {
-                efectuarDevolucion();
-            }
-        });
         verificarEntrada.addActionListener(e -> {
             if (!cargando) {
                 verificarEntrada();
             }
         });
 
+        pagar.addActionListener(e -> {
+            if (!cargando) {
+                efectuarDevolucion();
+            }
+        });
     }
-
-
 
     // ------------------------------------------------------------------ armado de la pantalla
 
-    private JComponent columnaDevolucion() {
+    private JComponent columnaMapa() {
+        JPanel panelCodEntrada = new JPanel(new GridLayout(1, 4, 20, 2));
+        panelCodEntrada.add(new JLabel("Codigo de Entrada"));
+        panelCodEntrada.add(codigoEntrada);
+        panelCodEntrada.add(verificarEntrada);
 
-        JPanel devolucionDatos = new JPanel(new GridLayout(2, 4, 12, 4));
-        devolucionDatos.setOpaque(false);
-        devolucionDatos.add(Estilo.etiqueta("Codigo de Entrada"));
-        devolucionDatos.add(codigoEntrada);
-        devolucionDatos.add(verificarEntrada);
-        devolucionDatos.add(Box.createVerticalStrut(4));
-        devolucionDatos.add(Box.createVerticalStrut(16));
+        JPanel panelMotivo = new JPanel(new GridLayout(2, 3, 20, 2));
+        panelMotivo.add(new JLabel("Motivo de la devolución"), BorderLayout.WEST);
+        panelMotivo.add(motivoDevolucion, BorderLayout.CENTER);
 
-        JPanel devolucionDatos2 = new JPanel(new GridLayout(2, 4, 6, 2));
-        devolucionDatos2.setOpaque(false);
-        devolucionDatos2.add(PanelDevolucion.alinear(Estilo.etiqueta("Motivo de Devolucion")));;
-        devolucionDatos2.add(motivoDevolucion);
+
 
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.setOpaque(false);
-        arriba.add(devolucionDatos, BorderLayout.CENTER);
-        arriba.add(devolucionDatos2, BorderLayout.SOUTH);
+        arriba.add(panelCodEntrada, BorderLayout.CENTER);
+        arriba.add(panelMotivo, BorderLayout.SOUTH);
 
-        JPanel columna = new JPanel(new BorderLayout(0, 14));
+
+        JPanel columna = new JPanel(new BorderLayout(0, 12));
         columna.add(arriba, BorderLayout.NORTH);
         return Estilo.tarjeta(columna);
     }
 
+
     private JComponent columnaResumen() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(PanelAltaSede.alinear(Estilo.seccion("Tu Devolución")));
-        panel.add(Box.createVerticalStrut(8));
-        panel.add(PanelAltaSede.alinear(detalle));
-        panel.add(Box.createVerticalStrut(2));
-        panel.add(Box.createVerticalStrut(12));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(Box.createVerticalStrut(4));
-
         JPanel promo = new JPanel(new BorderLayout(8, 0));
-        promo.setOpaque(false);
-        promo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        panel.add(PanelAltaSede.alinear(promo));
-        panel.add(Box.createVerticalStrut(16));
-        panel.add(PanelAltaSede.alinear(fila("Saldo a Reembolsar", subtotal)));
-        panel.add(Box.createVerticalStrut(14));
-        panel.add(Box.createVerticalStrut(14));
-        panel.add(Box.createVerticalStrut(8));
-        devolucion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        panel.add(PanelAltaSede.alinear(devolucion));
-        panel.add(Box.createVerticalGlue());
-        return panel;
+
+
+        total.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+        reloj.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        reloj.setForeground(SELECCIONADO);
+
+
+        return Estilo.columna(
+                Estilo.seccion("Tu devolución"),
+                detalle,
+                precioUnitario,
+
+                fila("Monto a reembolsar:", reembolso),
+                pagar);
     }
-
-
 
     private static JPanel fila(String texto, JLabel valor) {
         JPanel fila = new JPanel(new BorderLayout());
@@ -139,28 +142,20 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         return fila;
     }
 
-    private static JLabel valor() {
-        JLabel label = new JLabel("—");
-        label.setFont(Estilo.CUERPO);
-        return label;
-    }
+
+    // ------------------------------------------------------------------ datos
 
     @Override
     public void alMostrar() {
-        cargando = true;
-        Object funcionAnterior = funciones.getSelectedItem();
-        funciones.removeAllItems();
-        controlador.funcionesDisponibles().forEach(funciones::addItem);
-        if (funcionAnterior != null) {
-            funciones.setSelectedItem(funcionAnterior);
-        }
-        clientes.removeAllItems();
-        controlador.clientes().forEach(clientes::addItem);
-        cargando = false;
+
     }
 
     private Funcion funcion() {
         return (Funcion) funciones.getSelectedItem();
+    }
+
+    private Sector sector() {
+        return (Sector) sectores.getSelectedItem();
     }
 
     private void efectuarDevolucion() {
@@ -181,7 +176,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
             Optional<Entrada> entrada = controlador.buscarEntrada(codigoEntrada.getText());
             if (entrada.isPresent()) {
                 aviso.exito("Entrada válida: " );
-                subtotal.setText(Estilo.pesos(entrada.get().getPrecio()));
+                reembolso.setText(Estilo.pesos(entrada.get().getPrecio()));
                 return Optional.of(true);
             } else {
                 aviso.error("Entrada no encontrada.");
@@ -192,13 +187,4 @@ public class PanelDevolucion extends JPanel implements Pantalla {
             return Optional.empty();
         }
     }
-
-
-    static <T extends java.awt.Component> T alinear (T componente) {
-        if (componente instanceof javax.swing.JComponent j) {
-            j.setAlignmentX(Component.LEFT_ALIGNMENT);
-        }
-        return componente;
-    }
-
 }
