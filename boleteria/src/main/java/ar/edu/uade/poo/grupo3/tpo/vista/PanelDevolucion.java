@@ -1,22 +1,23 @@
 package ar.edu.uade.poo.grupo3.tpo.vista;
 
 import ar.edu.uade.poo.grupo3.tpo.controlador.VentaController;
-import ar.edu.uade.poo.grupo3.tpo.modelo.enums.MedioPago;
-import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Asiento;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.*;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 
-import javax.swing.*;
-import javax.swing.border.Border;
-import java.awt.*;
-import java.util.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.util.Optional;
 
 /**
- * Pantalla de venta: se elige función y sector, se marcan asientos en el mapa, se reservan por
- * 5 minutos y se pagan. Al pagar se muestra la factura.
- * Es solo la vista: la compra en curso y el reloj de la reserva los lleva el VentaController.
+ * Pantalla para validar entradas y gestionar su devolución.
  */
 public class PanelDevolucion extends JPanel implements Pantalla {
 
@@ -35,13 +36,11 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         this.controlador = controlador;
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Devolución de entradas",
-                "Ingrese los datos para proceder con la devolución de entradas:"),
+                "Verificá la entrada y consultá el monto a reembolsar antes de confirmar."),
                 BorderLayout.NORTH);
         JPanel centro = new JPanel(new BorderLayout(16, 0));
         centro.add(columnaMapa(), BorderLayout.CENTER);
         JPanel resumen = Estilo.tarjeta(columnaResumen());
-        Border lineBorder = BorderFactory.createLineBorder(Color.GRAY, 1);
-        motivoDevolucion.setBorder(lineBorder);
         resumen.setPreferredSize(new Dimension(330, 0));
         centro.add(resumen, BorderLayout.EAST);
         add(centro, BorderLayout.CENTER);
@@ -59,26 +58,38 @@ public class PanelDevolucion extends JPanel implements Pantalla {
     // ------------------------------------------------------------------ armado de la pantalla
 
     private JComponent columnaMapa() {
-        JPanel panelCodEntrada = new JPanel(new GridLayout(1, 4, 20, 2));
-        panelCodEntrada.add(new JLabel("Código de Entrada"));
-        panelCodEntrada.add(codigoEntrada);
-        panelCodEntrada.add(verificarEntrada);
+        JPanel codigo = new JPanel(new BorderLayout(8, 0));
+        codigo.add(codigoEntrada, BorderLayout.CENTER);
+        codigo.add(verificarEntrada, BorderLayout.EAST);
 
-        JPanel panelMotivo = new JPanel(new GridLayout(2, 3, 20, 2));
-        panelMotivo.add(new JLabel("Motivo de la devolución"), BorderLayout.WEST);
-        panelMotivo.add(motivoDevolucion, BorderLayout.CENTER);
+        JPanel campoCodigo = new JPanel(new BorderLayout(0, 6));
+        campoCodigo.add(new JLabel("Código de entrada"), BorderLayout.NORTH);
+        campoCodigo.add(codigo, BorderLayout.CENTER);
 
-        JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.add(panelCodEntrada, BorderLayout.CENTER);
-        arriba.add(panelMotivo, BorderLayout.SOUTH);
+        motivoDevolucion.setLineWrap(true);
+        motivoDevolucion.setWrapStyleWord(true);
+        motivoDevolucion.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        JScrollPane motivoScroll = new JScrollPane(motivoDevolucion);
+        motivoScroll.setBorder(BorderFactory.createLineBorder(Estilo.BORDE));
+        motivoScroll.setPreferredSize(new Dimension(0, 180));
 
-        JPanel columna = new JPanel(new BorderLayout(0, 12));
-        columna.add(arriba, BorderLayout.NORTH);
+        JPanel campoMotivo = new JPanel(new BorderLayout(0, 6));
+        campoMotivo.add(new JLabel("Motivo de la devolución"), BorderLayout.NORTH);
+        campoMotivo.add(motivoScroll, BorderLayout.CENTER);
+
+        JPanel campos = new JPanel(new BorderLayout(0, 16));
+        campos.add(campoCodigo, BorderLayout.NORTH);
+        campos.add(campoMotivo, BorderLayout.CENTER);
+
+        JPanel columna = new JPanel(new BorderLayout(0, 16));
+        columna.add(Estilo.seccion("Datos de la entrada"), BorderLayout.NORTH);
+        columna.add(campos, BorderLayout.CENTER);
         return Estilo.tarjeta(columna);
     }
 
 
     private JComponent columnaResumen() {
+        reembolso.setFont(Estilo.NUMERO_GRANDE);
         return Estilo.columna(
                 Estilo.seccion("Tu devolución"),
                 detalle,
@@ -121,7 +132,7 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         try {
             Optional<Entrada> entrada = controlador.buscarEntrada(codigoEntrada.getText());
             if (entrada.isPresent()) {
-                aviso.exito("Entrada válida." );
+                aviso.exito("Entrada válida.");
                 reembolso.setText(Estilo.pesos(entrada.get().getvalorPagado()));
                 return Optional.of(true);
             } else {
