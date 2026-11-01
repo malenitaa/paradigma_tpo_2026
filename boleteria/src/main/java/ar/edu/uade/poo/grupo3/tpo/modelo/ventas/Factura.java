@@ -92,4 +92,17 @@ public class Factura {
     public double getTotal() {
         return compra.calcularTotal();
     }
+
+    /** Restaura el próximo número a emitir (p. ej. desde datos/factura_seq.txt al iniciar). */
+    public static void establecerSecuencia(int proximoNumero) {
+        if (proximoNumero < 1) {
+            throw new IllegalArgumentException("La secuencia de facturas debe ser >= 1");
+        }
+        secuencia = proximoNumero;
+    }
+
+    /** Valor que usará la próxima factura emitida; conviene persistirlo tras cada venta. */
+    public static int proximaSecuencia() {
+        return secuencia;
+    }
 }

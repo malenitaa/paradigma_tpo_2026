@@ -10,19 +10,29 @@ Requiere **Java 17 o superior**.
 
 - **Doble click** en `Ejecutar Boleteria.command` (Mac): abre la aplicación Swing.
 - Desde la terminal, en esta carpeta (`boleteria/`): `java -jar Boleteria-TPO.jar`
-- Con Maven: `mvn compile exec:java` (abre la aplicación Swing).
-- Demo por consola del flujo de compra completo:
-  `mvn compile exec:java -Dexec.mainClass=ar.edu.uade.poo.grupo3.tpo.DemoFlujoCompra`
+- Con Maven (Swing): `mvn compile exec:exec` — usa JVM separada (`exec:java` puede colgar con Java reciente).
+- Demo por consola: `mvn compile exec:exec@demo-flujo-compra`
 
-### Probar una compra
-1. En el menú, **Ventas → Venta de entradas** (o Ctrl+V).
-2. Elegí función, sector (por ejemplo *FLR · Floor*) y cliente; marcá asientos en el mapa.
-3. **Reservar**: los asientos quedan en verde y arranca la cuenta regresiva de 5 minutos.
-4. Opcional: código promocional `FAN10` o `BANCO20` → **Aplicar**.
-5. Elegí el medio de pago y **Pagar**: se muestra el comprobante y se guarda en `datos/facturas/`.
-6. Para ver qué pasa si no pagás a tiempo: botón *Demo: adelantar el reloj 5 minutos*.
-7. Para ver una regla de venta: elegí asientos salteados (por ejemplo E-1 y E-3) y reservá.
- 8. Para devolver una entrada: **Ventas → Devoluciones** (Ctrl+D), el código que figura en el comprobante (por ejemplo `E0001-01`) → **Verificar entrada** → **Efectuar devolución**.
+Si `mvn` no está en el PATH, usá la ruta completa (por ejemplo `~/.local/opt/apache-maven-3.9.9/bin/mvn`) o compilá y ejecutá:
+
+```bash
+mkdir -p target/classes
+find src/main/java -name '*.java' > /tmp/sources.txt
+javac -d target/classes -sourcepath src/main/java @/tmp/sources.txt
+java -cp target/classes ar.edu.uade.poo.grupo3.tpo.DemoFlujoCompra
+```
+
+### Probar una compra (Swing)
+
+1. **Clientes → Iniciar sesión** (o Registro de cuenta) con email y contraseña.
+2. **Ventas → Venta de entradas** (Ctrl+V): el cliente es el de la sesión activa.
+3. Elegí función, sector (por ejemplo *FLR · Floor*) y marcá asientos en el mapa.
+4. **Reservar**: los asientos quedan en verde y arranca la cuenta regresiva de 5 minutos.
+5. Opcional: código promocional `FAN10` o `BANCO20` → **Aplicar**.
+6. Elegí el medio de pago y **Pagar**: se muestra el comprobante y se guarda en `datos/facturas/` (secuencia en `datos/factura_seq.txt`).
+7. Para ver qué pasa si no pagás a tiempo: botón *Demo: adelantar el reloj 5 minutos*.
+8. Para ver una regla de venta: elegí asientos salteados (por ejemplo E-1 y E-3) y reservá.
+9. Para devolver una entrada: **Ventas → Devoluciones** (Ctrl+D), el código del comprobante (por ejemplo `E0001-01`) → **Verificar entrada** → **Efectuar devolución**.
 
 Cuentas de prueba: `ana@mail.com`, `bruno@mail.com`, `carla@mail.com` · contraseña `boleteria123`.
 Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN10` (10 %).

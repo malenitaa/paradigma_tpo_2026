@@ -58,7 +58,7 @@ public class PanelVenta extends JPanel implements Pantalla {
     private final VentaController controlador;
     private final JComboBox<Funcion> funciones = new JComboBox<>();
     private final JComboBox<Sector> sectores = new JComboBox<>();
-    private final JComboBox<Cliente> clientes = new JComboBox<>();
+    private final JLabel clienteSesion = Estilo.subtitulo("Sin sesión");
     private final JTextField codigoPreventa = new JTextField(10);
     private final JLabel avisoPreventa = Estilo.subtitulo(" ");
     private final JPanel mapa = new JPanel();
@@ -132,7 +132,7 @@ public class PanelVenta extends JPanel implements Pantalla {
         JPanel filtros = new JPanel(new GridLayout(2, 2, 10, 8));
         filtros.add(campo("Función", funciones));
         filtros.add(campo("Sector", sectores));
-        filtros.add(campo("Cliente", clientes));
+        filtros.add(campo("Cliente (sesión)", clienteSesion));
         filtros.add(campo("Código de preventa", codigoPreventa));
 
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
@@ -247,14 +247,19 @@ public class PanelVenta extends JPanel implements Pantalla {
         if (funcionAnterior != null) {
             funciones.setSelectedItem(funcionAnterior);
         }
-        clientes.removeAllItems();
-        controlador.clientes().forEach(clientes::addItem);
+        actualizarClienteSesion();
         cargando = false;
         PaqueteVIP vip = controlador.paqueteVip();
         paqueteVip.setText(vip == null ? "Sin paquetes VIP"
                 : "Sumar " + vip.getNombre() + " (" + Estilo.pesos(vip.getPrecio()) + ")");
         paqueteVip.setEnabled(vip != null);
         cargarSectores();
+    }
+
+    private void actualizarClienteSesion() {
+        controlador.clienteSesion().ifPresentOrElse(
+                c -> clienteSesion.setText(c.getNombre() + " · " + c.getEmail()),
+                () -> clienteSesion.setText("Sin sesión — Clientes → Iniciar sesión"));
     }
 
     private Funcion funcion() {
@@ -396,10 +401,9 @@ public class PanelVenta extends JPanel implements Pantalla {
         boolean enCurso = compra != null;
         funciones.setEnabled(!enCurso);
         sectores.setEnabled(!enCurso);
-        clientes.setEnabled(!enCurso);
         codigoPreventa.setEnabled(!enCurso);
         paqueteVip.setEnabled(!enCurso && vip != null);
-        reservar.setEnabled(!enCurso);
+        reservar.setEnabled(!enCurso && controlador.clienteSesion().isPresent());
         pagar.setEnabled(enCurso);
         codigoPromo.setEnabled(enCurso);
         aplicarPromo.setEnabled(enCurso);
@@ -441,9 +445,13 @@ public class PanelVenta extends JPanel implements Pantalla {
     private void reservar() {
         Funcion funcion = funcion();
         Sector sector = sector();
-        Cliente cliente = (Cliente) clientes.getSelectedItem();
-        if (funcion == null || sector == null || cliente == null) {
-            aviso.error("Elegí función, sector y cliente.");
+        Cliente cliente = controlador.clienteSesion().orElse(null);
+        if (funcion == null || sector == null) {
+            aviso.error("Elegí función y sector.");
+            return;
+        }
+        if (cliente == null) {
+            aviso.error("Iniciá sesión en Clientes → Iniciar sesión antes de reservar.");
             return;
         }
         try {

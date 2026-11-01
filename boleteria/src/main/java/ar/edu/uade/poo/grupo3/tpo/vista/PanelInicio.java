@@ -30,7 +30,7 @@ public class PanelInicio extends JPanel implements Pantalla {
     private final DefaultTableModel modeloFunciones =
             Estilo.modeloTabla("Evento", "Sede", "Fecha", "Precio base", "Ocupación", "Estado");
 
-    public PanelInicio(Boleteria boleteria, Runnable irAAlta, Runnable irAConsulta) {
+    public PanelInicio(Boleteria boleteria, Runnable irAAlta, Runnable irAConsulta, Runnable irARegistro) {
         super(new BorderLayout());
         this.boleteria = boleteria;
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
@@ -50,9 +50,12 @@ public class PanelInicio extends JPanel implements Pantalla {
         nueva.addActionListener(e -> irAAlta.run());
         JButton ver = new JButton("Ver sedes");
         ver.addActionListener(e -> irAConsulta.run());
+        JButton registro = new JButton("Registrar cliente");
+        registro.addActionListener(e -> irARegistro.run());
         JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         acciones.add(nueva);
         acciones.add(ver);
+        acciones.add(registro);
         JPanel funciones = new JPanel(new BorderLayout(0, 10));
         funciones.add(Estilo.seccion("Próximas funciones"), BorderLayout.NORTH);
         funciones.add(Estilo.scroll(tablaFunciones), BorderLayout.CENTER);

@@ -20,7 +20,7 @@ import java.util.Optional;
 
 /**
  * Configura la boletería: carga los .txt de la carpeta datos/ y, si están vacíos, crea datos de ejemplo.
- * Los eventos y funciones todavía se crean en memoria (su persistencia queda para la entrega final).
+ * Los eventos y funciones se cargan desde datos/eventos.txt y datos/funciones.txt; si no hay ninguno, se crean de ejemplo.
  */
 public final class DatosIniciales {
 
@@ -52,7 +52,10 @@ public final class DatosIniciales {
             boleteria.registrarCuenta("35444777", "Carla Méndez", "carla@mail.com", CONTRASENIA_DEMO);
             boleteria.guardarClientes();
         }
-        crearEventosDeEjemplo(boleteria);
+        if (boleteria.getEventos().isEmpty()) {
+            crearEventosDeEjemplo(boleteria);
+            boleteria.guardarEventos();
+        }
     }
 
     private static void crearSedesDeEjemplo(Boleteria boleteria) {
@@ -71,7 +74,7 @@ public final class DatosIniciales {
         boleteria.agregarSede(estadio);
     }
 
-    private static void crearEventosDeEjemplo(Boleteria boleteria) {
+    public static void crearEventosDeEjemplo(Boleteria boleteria) {
         Optional<Sede> esfera = boleteria.buscarSede("Esfera Las Vegas");
         if (esfera.isEmpty()) {
             return;

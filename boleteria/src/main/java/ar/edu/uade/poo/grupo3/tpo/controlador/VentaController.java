@@ -49,6 +49,10 @@ public class VentaController {
         return boleteria.getClientes();
     }
 
+    public Optional<Cliente> clienteSesion() {
+        return boleteria.getClienteSesion();
+    }
+
     /** El paquete VIP que se ofrece en la venta, o null si no hay ninguno cargado. */
     public PaqueteVIP paqueteVip() {
         return boleteria.getPaquetes().isEmpty() ? null : boleteria.getPaquetes().get(0);

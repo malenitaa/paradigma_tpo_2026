@@ -143,6 +143,12 @@ public class Funcion {
         return estado;
     }
 
+    public void setEstado(EstadoFuncion estado) {
+        if (estado != null) {
+            this.estado = estado;
+        }
+    }
+
     public Preventa getPreventa() {
         return preventa;
     }

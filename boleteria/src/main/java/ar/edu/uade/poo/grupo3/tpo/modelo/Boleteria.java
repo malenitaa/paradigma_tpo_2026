@@ -14,6 +14,7 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorGeneral;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorNumerado;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.ClienteRepositorioArchivo;
+import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.EventoRepositorioArchivo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.Repositorio;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.SedeRepositorioArchivo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.promociones.Promocion;
@@ -26,7 +27,11 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +52,7 @@ public final class Boleteria {
     private final Path directorioDatos;
     private final Repositorio<Sede> repoSedes;
     private final Repositorio<Cliente> repoClientes;
+    private final EventoRepositorioArchivo repoEventos;
 
     private final List<Sede> sedes = new ArrayList<>();
     private final List<Evento> eventos = new ArrayList<>();
@@ -58,10 +64,17 @@ public final class Boleteria {
     private final List<Promocion> promociones = new ArrayList<>();
     private final List<PaqueteVIP> paquetes = new ArrayList<>();
 
+    /** Cliente autenticado en la app Swing; null si no hay sesión. */
+    private Cliente clienteSesion;
+
+    private static final Pattern PATRON_NUMERO_FACTURA =
+            Pattern.compile("FAC-0001-(\\d{8})\\.txt", Pattern.CASE_INSENSITIVE);
+
     private Boleteria(Path directorioDatos) {
         this.directorioDatos = directorioDatos;
         this.repoSedes = new SedeRepositorioArchivo(directorioDatos);
         this.repoClientes = new ClienteRepositorioArchivo(directorioDatos);
+        this.repoEventos = new EventoRepositorioArchivo(directorioDatos);
     }
 
     public static synchronized Boleteria getInstancia() {
@@ -78,6 +91,10 @@ public final class Boleteria {
         sedes.addAll(repoSedes.cargarTodos());
         clientes.clear();
         clientes.addAll(repoClientes.cargarTodos());
+        repoEventos.prepararCarga(sedes);
+        eventos.clear();
+        eventos.addAll(repoEventos.cargarTodos());
+        cargarSecuenciaFactura();
     }
 
     public void guardarSedes() throws IOException {
@@ -86,6 +103,10 @@ public final class Boleteria {
 
     public void guardarClientes() throws IOException {
         repoClientes.guardarTodos(clientes);
+    }
+
+    public void guardarEventos() throws IOException {
+        repoEventos.guardarTodos(eventos);
     }
 
     public Path getDirectorioDatos() {
@@ -171,9 +192,20 @@ public final class Boleteria {
         return cliente;
     }
 
-    /** Devuelve el cliente si el email y la contraseña coinciden; vacío si no. */
+    /** Devuelve el cliente si el email y la contraseña coinciden; vacío si no. Deja la sesión activa en la UI. */
     public Optional<Cliente> iniciarSesion(String email, String contrasenia) {
-        return buscarClientePorEmail(email).filter(c -> c.verificarContrasenia(contrasenia));
+        Optional<Cliente> cliente = buscarClientePorEmail(email)
+                .filter(c -> c.verificarContrasenia(contrasenia));
+        cliente.ifPresent(c -> clienteSesion = c);
+        return cliente;
+    }
+
+    public Optional<Cliente> getClienteSesion() {
+        return Optional.ofNullable(clienteSesion);
+    }
+
+    public void cerrarSesion() {
+        clienteSesion = null;
     }
 
     public Optional<Cliente> buscarClientePorEmail(String email) {
@@ -300,11 +332,53 @@ public final class Boleteria {
         facturas.add(factura);
         try {
             factura.guardar(directorioDatos.resolve("facturas"));
+            guardarSecuenciaFactura();
         } catch (IOException e) {
             // La venta ya está hecha: si falla el archivo no se pierde la compra, solo se avisa.
             System.err.println("No se pudo guardar la factura " + factura.getNumero() + ": " + e.getMessage());
         }
         return factura;
+    }
+
+    private void cargarSecuenciaFactura() {
+        Path archivo = directorioDatos.resolve("factura_seq.txt");
+        try {
+            if (Files.exists(archivo)) {
+                int proximo = Integer.parseInt(Files.readString(archivo, StandardCharsets.UTF_8).trim());
+                if (proximo >= 1) {
+                    Factura.establecerSecuencia(proximo);
+                }
+                return;
+            }
+            int desdeDisco = inferirProximaSecuenciaDesdeFacturas();
+            if (desdeDisco > 1) {
+                Factura.establecerSecuencia(desdeDisco);
+            }
+        } catch (IOException | NumberFormatException e) {
+            System.err.println("No se pudo leer la secuencia de facturas: " + e.getMessage());
+        }
+    }
+
+    private int inferirProximaSecuenciaDesdeFacturas() throws IOException {
+        Path carpeta = directorioDatos.resolve("facturas");
+        if (!Files.isDirectory(carpeta)) {
+            return 1;
+        }
+        int max = 0;
+        try (var archivos = Files.list(carpeta)) {
+            for (Path path : archivos.filter(p -> p.getFileName().toString().startsWith("FAC-")).toList()) {
+                Matcher m = PATRON_NUMERO_FACTURA.matcher(path.getFileName().toString());
+                if (m.matches()) {
+                    max = Math.max(max, Integer.parseInt(m.group(1)));
+                }
+            }
+        }
+        return max + 1;
+    }
+
+    private void guardarSecuenciaFactura() throws IOException {
+        Path archivo = directorioDatos.resolve("factura_seq.txt");
+        Files.writeString(archivo, Integer.toString(Factura.proximaSecuencia()), StandardCharsets.UTF_8);
     }
 
     public void cancelarCompra(Compra compra) {
