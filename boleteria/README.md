@@ -59,7 +59,7 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | **Strategy** | `modelo.reglas.ReglaDeVenta` (`NoDejarAsientoSuelto`, `RequiereCodigoPreventa`): la boletería valida la lista de reglas sin conocerlas |
 | **Factory** | `modelo.infraestructura.Sector.crear(...)` (método de fábrica estático) crea los sectores (lo usan las pantallas y el repositorio) |
 | **Repository** | `modelo.persistencia.Repositorio<T>` con `SedeRepositorioArchivo` y `ClienteRepositorioArchivo` |
-| **MVC** | **Vista** `vista.Panel*` (arma la pantalla y muestra mensajes) → **Controlador** `controlador.SedeController` / `controlador.VentaController` (recibe lo que hace el usuario, lleva la compra en curso) → **Modelo** `modelo.Boleteria` y el dominio. Ver [diagrama MVC](../diagramas/arquitectura/mvc.puml) |
+| **MVC** | **Vista** `vista.Panel*` (arma la pantalla y muestra mensajes) → **Controlador** `controlador.SedeController` / `controlador.VentaController` (recibe lo que hace el usuario, lleva la compra en curso) → **Modelo** `modelo.Boleteria` y el dominio. Ver [diagrama MVC](../diagramas/arquitectura/mvc.svg) |
 | **Creador / Experto (GRASP)** | `Compra` crea sus `Entrada`; `Funcion` sabe qué asientos están libres; `Sector` calcula su multiplicador |
 | **Herencia y polimorfismo** | `Sector` → `SectorNumerado` / `SectorGeneral` (`getCapacidad`, `calcularMultiplicador`) |
 
@@ -86,7 +86,7 @@ Si la carpeta `datos/` no existe, se crea con datos de ejemplo. Los eventos y fu
 
 ## Estructura del código
 
-Los paquetes siguen las tres capas de MVC (ver [`diagramas/arquitectura/mvc.puml`](../diagramas/arquitectura/mvc.puml)):
+Los paquetes siguen las tres capas de MVC (ver [`diagramas/arquitectura/mvc.svg`](../diagramas/arquitectura/mvc.svg)):
 
 ```
 ar.edu.uade.poo.grupo3.tpo
