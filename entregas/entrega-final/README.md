@@ -9,5 +9,5 @@
 
 Para la defensa oral, el **por qué** de cada decisión está en [`DEFENSA.md`](../../DEFENSA.md).
 
-El documento refleja el modelo de 25 clases, los paquetes `vista` / `controlador` / `modelo`, los diagramas en SVG
-de [`diagramas/`](../../diagramas/) y las capturas de [`capturas/`](../../capturas/), incluidas Devoluciones y los diálogos.
+El documento refleja el modelo de 26 clases (incluida la persistencia de eventos y funciones), los paquetes `vista` / `controlador` / `modelo`, los diagramas en SVG
+de [`diagramas/`](../../diagramas/) y las capturas de [`capturas/`](../../capturas/), incluidas Registro e Inicio de sesión de clientes, Devoluciones y los diálogos.

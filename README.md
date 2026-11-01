@@ -4,7 +4,7 @@ Sistema de venta de entradas para sedes de espectáculos, inspirado en la **Esfe
 el precio de cada ubicación depende del piso y de la distancia al escenario, los asientos se reservan
 por 5 minutos mientras se paga, hay preventa con código de acceso, promociones por código, factura y devoluciones.
 
-![Venta de entradas](capturas/07_venta_reservada.png)
+![Venta de entradas](capturas/09_venta_reservada.png)
 
 > **Para defenderlo:** [DEFENSA.md](DEFENSA.md) explica por qué el sistema está diseñado así: capas MVC, cada patrón, excepciones, relaciones y preguntas probables.
 
