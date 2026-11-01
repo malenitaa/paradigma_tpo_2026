@@ -601,7 +601,7 @@ La última diapositiva de la clase 14 lista lo que tiene que tener el TPO termin
 | 3 diálogos | ✔ confirmación de baja, error de arranque, comprobante | [sección 12](#12-la-interfaz-swing-decisiones) |
 | Menú principal que navega entre ventanas | ✔ `JMenuBar` (Inicio / Sedes / Ventas / Ayuda, con atajos) + `CardLayout` | `VentanaPrincipal` |
 | Datos en archivos o BD | ✔ `datos/*.txt`. Falta persistir eventos, funciones y compras. | [sección 9](#9-persistencia-en-archivos) |
-| Documentación (10 páginas) | Borrador listo. Hay que actualizar su sección 8 al orden actual de paquetes. | [`entregas/entrega-final/`](entregas/entrega-final/) |
+| Documentación (10 páginas) | ✔ 17 páginas, alineada con el código: 25 clases, capas MVC, capturas de Devoluciones y diálogos | [`entregas/entrega-final/`](entregas/entrega-final/) |
 
 ---
 
