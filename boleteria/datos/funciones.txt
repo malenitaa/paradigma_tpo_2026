@@ -1,0 +1,4 @@
+# idEvento|idFuncion|sede|fechaHora|precioBase|estado|prevCodigo|prevInicio|prevFin
+1|1|Esfera Las Vegas|2026-11-16T21:00:00|50000|PROGRAMADA|||
+1|2|Esfera Las Vegas|2026-12-01T21:00:00|50000|PROGRAMADA|ORBITA26|2026-10-31T17:24:34.139833843|2026-11-04T17:24:34.139855604
+1|3|Esfera Las Vegas|2026-11-02T21:00:00|50000|PROGRAMADA|||
