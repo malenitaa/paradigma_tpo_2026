@@ -10,8 +10,8 @@ cuando pregunten "¿y por qué no lo hicieron de otra forma?". Usa los nombres d
 
 > Para ejecutar la app y ver las pantallas: [`boleteria/README.md`](boleteria/README.md).
 > Documento formal de la entrega final (PDF y DOCX): [`entregas/entrega-final/`](entregas/entrega-final/).
-> Diagramas: [clases v4](diagramas/clases/diagrama_clases_v4.png) · [capas MVC](diagramas/arquitectura/mvc.puml) ·
-> [secuencia de compra](diagramas/flujo-de-compra/secuencia_compra.png) · [estados](diagramas/flujo-de-compra/estados_compra_entrada.png).
+> Diagramas: [clases v4](diagramas/clases/diagrama_clases_v4.svg) · [capas MVC](diagramas/arquitectura/mvc.svg) ·
+> [secuencia de compra](diagramas/flujo-de-compra/secuencia_compra.svg) · [estados](diagramas/flujo-de-compra/estados_compra_entrada.png).
 
 ---
 
@@ -396,7 +396,7 @@ Entre que el cliente elige asientos y paga pasan minutos. Sin reserva, dos opera
 mismo asiento. Con reserva permanente, un cliente indeciso bloquearía asientos para siempre. Cinco
 minutos (`Compra.MINUTOS_RESERVA`) es lo que hacen las ticketeras reales.
 
-### Cómo funciona (ver [secuencia](diagramas/flujo-de-compra/secuencia_compra.png))
+### Cómo funciona (ver [secuencia](diagramas/flujo-de-compra/secuencia_compra.svg))
 
 1. **Elegir.** La pantalla pide `funcionesDisponibles()` y, por función, los sectores de su sede. Antes de
    dibujar el mapa llama a `liberarReservasVencidas()`: así un asiento cuya reserva venció aparece libre.
