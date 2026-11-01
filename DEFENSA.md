@@ -50,7 +50,7 @@ reglas de venta. Flujo completo: elegir función y sector, marcar asientos, rese
 aplicar un código promocional, pagar, recibir la factura, y devolver hasta 48 hs antes.
 
 **Fuera de alcance** (decidido en la entrega 1): el contenido del show, el cobro real con pasarela de pago
-y la reventa. El `Pago` registra el medio y el número de operación, no cobra.
+y la reventa. La `Compra` registra el medio y el número de operación, no cobra.
 
 **Por qué acotamos.** La devolución de la entrega 1 pidió dos cosas: centrar el proyecto en la venta de
 entradas y armar el flujo de compra como un caso real. Sacamos lo que no sumaba a ese flujo
@@ -141,11 +141,10 @@ Cada clase existe porque hay algo del negocio que **sabe** o **hace** y nadie m�
 | Clase | Qué sabe / hace | Por qué existe así |
 |---|---|---|
 | `Sede` | Nombre, dirección y sus sectores. Capacidad total. | Es el "todo" de la composición con `Sector`: los sectores no existen sin la sede. Valida que el nombre no tenga `\|` porque es el separador del archivo. |
-| `Sector` (abstracta) | Código, nombre, piso, distancia al escenario. **Calcula su multiplicador de precio.** | Abstracta porque hay dos tipos reales con capacidad distinta. El multiplicador vive acá porque el sector es el que **tiene** piso y distancia (Experto). |
+| `Sector` (abstracta) | Código, nombre, piso, distancia al escenario. **Calcula su multiplicador de precio.** | Abstracta porque hay dos tipos reales con capacidad distinta. El multiplicador vive acá porque el sector es el que **tiene** piso y distancia (Experto). `Sector.crear(tipo, …)` es el método de fábrica estático que usan la pantalla y el repositorio: el único `switch` por tipo. |
 | `SectorNumerado` | Lista de `Asiento`. Genera filas A, B, C… | En la Esfera todos los sectores son así. `getCapacidad()` = cantidad de asientos. |
 | `SectorGeneral` | Solo capacidad. | Un campo de pie: no hay asiento. **Sobrescribe** `calcularMultiplicador()` para cobrar 20 % menos: estar de pie vale menos que una butaca en el mismo lugar (polimorfismo con comportamiento propio, no un `if` por tipo). |
 | `Asiento` | Fila y número. Si es adyacente a otro. | **No sabe si está vendido.** El mismo asiento físico se vende por separado en cada función, así que la disponibilidad la sabe `Funcion`. Tiene `equals`/`hashCode` por fila+número para poder usarlo en `Set` y `contains`. |
-| `SectorFactory` | Crea sectores de cualquier tipo a partir de datos sueltos. | Las pantallas y el repositorio de archivos necesitaban crear sectores; sin la fábrica habría dos lugares con el mismo `switch` por tipo. |
 
 **Fórmula de precio.** `Funcion.calcularPrecio(sector) = round(precioBase × sector.calcularMultiplicador())`.
 El multiplicador combina cercanía y piso: `porCercania = 1 + 1 / (1 + distancia/10)` (de 2,0 pegado al
@@ -156,9 +155,7 @@ escenario a ~1,0 lejos) y `porPiso = max(0,6; 1 − piso × 0,1)`. Un sector gen
 
 | Clase | Qué sabe / hace | Por qué existe así |
 |---|---|---|
-| `Evento` (abstracta) | Nombre, descripción, duración, sus funciones. | Abstracta porque un evento siempre es de algún tipo concreto; `getTipo()` es abstracto. Hoy solo hay `Recital`, pero la jerarquía está lista para agregar otro tipo sin tocar `Boleteria`. |
-| `Recital` | Género y artistas. | El tipo de evento del caso de uso principal. |
-| `Artista` | Nombre y nacionalidad. `equals` por nombre sin distinguir mayúsculas. | Para que un recital no tenga dos veces al mismo artista. |
+| `Evento` | Nombre, descripción, duración, género, artistas (nombres, sin repetir) y sus funciones. | Una sola clase concreta: el único tipo de evento del TPO es el recital. En la entrega 1 había una jerarquía `Evento` → `Recital` con `Artista` aparte; se simplificó porque no había un segundo tipo de evento ni comportamiento propio del artista. |
 | `Funcion` | Fecha, precio base, sede, estado, preventa opcional y **sus entradas**. Sabe si un asiento está disponible, cuántos lugares quedan y el precio por sector. | Es **la experta en disponibilidad**: tiene las entradas emitidas, así que es la única que puede responder "¿está libre A-3?". Pasa a `AGOTADA` sola cuando no queda lugar y vuelve a `PROGRAMADA` si se libera uno. |
 | `Preventa` | Código de acceso y período. | Separada de `Funcion` porque es opcional (0..1) y tiene su propia validación de fechas. No cambia el precio: solo restringe quién puede comprar. |
 
@@ -166,14 +163,11 @@ escenario a ~1,0 lejos) y `porPiso = max(0,6; 1 − piso × 0,1)`. Un sector gen
 
 | Clase | Qué sabe / hace | Por qué existe así |
 |---|---|---|
-| `Cliente` | DNI, nombre, su `Cuenta` y su historial de compras. | Los datos de la persona. DNI validado con 7 u 8 dígitos. |
-| `Cuenta` | Email y **hash** de la contraseña. Verifica y cambia contraseña. | Separada de `Cliente` por responsabilidad única: la identidad (DNI, nombre) y el acceso (email, contraseña) cambian por motivos distintos. Guarda SHA-256, nunca la contraseña, porque el archivo `clientes.txt` es texto plano. |
-| `Compra` | Entradas, paquetes, cargos, promoción, pago, estado y **vencimiento de la reserva**. Calcula subtotal, descuento, cargos y total. | Es la experta en el total porque tiene todas las partes. **Crea sus entradas** (Creador). Controla su ciclo de vida con `verificarReservada()`: no se puede agregar nada a una compra que ya no está reservada. |
+| `Cliente` | DNI, nombre, email, **hash** de la contraseña y su historial de compras. Verifica y cambia la contraseña. | DNI validado con 7 u 8 dígitos. Guarda SHA-256, nunca la contraseña, porque el archivo `clientes.txt` es texto plano. En la entrega 1 el acceso estaba en una clase `Cuenta` aparte; se unificó porque un cliente tiene exactamente una cuenta y las dos clases siempre viajaban juntas. |
+| `Compra` | Entradas, paquetes, promoción, medio y número de operación del pago, estado y **vencimiento de la reserva**. Calcula subtotal, descuento, cargo por servicio (`CARGO_SERVICIO`, 12 %) y total. | Es la experta en el total porque tiene todas las partes. **Crea sus entradas** (Creador). Controla su ciclo de vida con `verificarReservada()`: no se puede agregar nada a una compra que ya no está reservada. |
 | `Entrada` | Función, sector, asiento (null si es general), **precio congelado**, lo que se pagó por ella y estado. Sabe si puede devolverse. | El precio se calcula y se guarda al crearla: si después cambia el precio base de la función, lo que pagó el cliente no cambia. |
-| `Cargo` | Nombre y porcentaje. `aplicar(monto)`. | Cargo por servicio como objeto y no como constante: la boletería tiene una lista de cargos vigentes y se los aplica a cada compra nueva. Agregar un impuesto es agregar un `Cargo`, no tocar código. |
 | `PaqueteVIP` | Nombre, precio, beneficios y **cupo**. | El cupo se reserva al agregarlo a una compra y se libera si la compra vence o se cancela. `reservarCupo()` y `liberarCupo()` son de paquete (sin `public`) para que solo `Compra` los use. |
-| `Pago` | Número de operación, medio, monto, fecha. | Registro, no cobro. Separado de `Compra` porque una compra reservada todavía no tiene pago (0..1). |
-| `Factura` | Número correlativo, fecha, la compra. Genera el texto del comprobante. | Solo se puede crear a partir de una compra pagada (lo valida el constructor). Es la única que sabe cómo se ve un comprobante. |
+| `Factura` | Número correlativo, fecha, la compra. Genera el texto del comprobante y lo guarda en un `.txt` (`guardar(carpeta)`). | Solo se puede crear a partir de una compra pagada (lo valida el constructor). Es la única que sabe cómo se ve un comprobante. |
 | `Devolucion` | Entrada, motivo, fecha, monto a reintegrar. | El reintegro es lo que se pagó por la entrada (`Entrada.getValorPagado()`, con su parte del descuento) **sin** los cargos: la regla está en `calcularReintegro()`, en un solo lugar. |
 
 ### `modelo/promociones`, `modelo/reglas`, `modelo/excepcion`, `modelo/enums`
@@ -184,7 +178,7 @@ escenario a ~1,0 lejos) y `porPiso = max(0,6; 1 − piso × 0,1)`. Un sector gen
 | `ReglaDeVenta` (interfaz) | `validar(compra, funcion, sector, seleccion, ahora)` que lanza `SeleccionInvalidaException`. | Contrato estable: la boletería recorre la lista de reglas sin saber cuáles son. |
 | `NoDejarAsientoSuelto` | Rechaza una selección que deje un asiento libre entre dos ocupados (o entre un ocupado y el borde). | Es el problema real de "asientos que nadie compra". Compara el mapa de ocupados antes y después de la selección y solo falla si la selección **crea** un asiento suelto nuevo. |
 | `RequiereCodigoPreventa` | Durante la preventa exige el código. | Lee la fecha `ahora` que le pasan, no `LocalDateTime.now()`: así se puede probar con cualquier fecha. |
-| `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` | Las cuatro situaciones del negocio que el usuario tiene que ver como mensaje. | Ver [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan). |
+| `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` | Las tres situaciones del negocio que el usuario tiene que ver como mensaje. | Ver [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan). |
 | `EstadoFuncion`, `EstadoCompra`, `EstadoEntrada`, `MedioPago`, `TipoSector` | Valores cerrados. | Enums y no strings para que el compilador rechace un estado inexistente. `EstadoEntrada.estaActiva()` muestra que un enum puede tener comportamiento. |
 
 ### `modelo/persistencia`
@@ -193,8 +187,8 @@ escenario a ~1,0 lejos) y `porPiso = max(0,6; 1 − piso × 0,1)`. Un sector gen
 |---|---|---|
 | `Repositorio<T>` (interfaz) | `cargarTodos()` y `guardarTodos(lista)`. | El dominio no sabe cómo se guardan los datos. Hoy es `.txt`; mañana puede ser una base de datos sin tocar `Boleteria`. |
 | `SedeRepositorioArchivo` | Sedes en `sedes.txt`, sectores en `sectores.txt`. | Dos archivos porque son dos entidades con distinta cantidad de campos. Si una línea está mal, avisa con el número de registro. |
-| `ClienteRepositorioArchivo` | `clientes.txt` con el hash. | Reconstruye la `Cuenta` con `Cuenta.desdeHash`, sin volver a hashear. |
-| `FacturaArchivo` | Un `.txt` por comprobante en `datos/facturas/`. | No implementa `Repositorio` porque las facturas solo se escriben, nunca se cargan: no tiene sentido obligarla a tener `cargarTodos()` (Segregación de interfaces). |
+| `ClienteRepositorioArchivo` | `clientes.txt` con el hash. | Reconstruye el `Cliente` con `Cliente.desdeArchivo`, sin volver a hashear. |
+| (facturas) | Cada `Factura` se escribe a sí misma con `guardar(carpeta)`: un `.txt` por comprobante en `datos/facturas/`. | No hay repositorio de facturas porque solo se escriben, nunca se cargan: no tiene sentido una clase con `cargarTodos()` vacío (Segregación de interfaces). |
 
 ### `Boleteria` (fachada del modelo)
 
@@ -261,17 +255,18 @@ modelo".
 - **Detalle defendible.** La regla recibe `ahora` como parámetro en vez de llamar a `LocalDateTime.now()`.
   Eso permite que la demo pruebe "pasaron 6 minutos" y que un test futuro fije la fecha.
 
-### Factory — `SectorFactory`
+### Factory — `Sector.crear`
 
 - **Qué resuelve.** Crear un sector requiere decidir por tipo (numerado o general), con parámetros
   distintos, y generar los asientos. Eso lo necesitaban dos lugares: `FormularioSector` (pantalla) y
   `SedeRepositorioArchivo` (al leer el archivo).
-- **Cómo.** Clase `final` con constructor privado y métodos estáticos `crear(...)` y `crearNumerado(...)`.
-  Es el único lugar con `switch (tipo)`.
+- **Cómo.** Métodos estáticos `Sector.crear(tipo, ...)` y `Sector.crearNumerado(...)` en la clase base
+  (*static factory method*). Es el único lugar con `switch (tipo)`.
 - **Sin él.** El `switch` duplicado en la pantalla y en el repositorio; agregar un tipo de sector obliga a
   tocar los dos.
-- **En términos de la cátedra.** GRASP **Creador** (tiene los datos para inicializar) y **Fabricación
-  pura** (no es una clase del negocio: se inventó para ordenar la creación).
+- **En términos de la cátedra.** GRASP **Creador** (tiene los datos para inicializar). En la entrega 1 era
+  una clase `SectorFactory` aparte; se movió a `Sector` porque la fábrica no tenía estado propio y así
+  queda una clase menos con la misma función.
 
 ### Repository — `Repositorio<T>`, `SedeRepositorioArchivo`, `ClienteRepositorioArchivo`
 
@@ -288,12 +283,11 @@ modelo".
   habría que inyectar los repositorios por constructor; lo dejamos así para mantener el singleton simple.
   Ver [sección 14](#14-limitaciones-conocidas-y-lo-que-falta).
 
-### Herencia y polimorfismo — `Sector` y `Evento`
+### Herencia y polimorfismo — `Sector`
 
 - `Sector` → `SectorNumerado` / `SectorGeneral`: `getCapacidad()` y `getTipo()` abstractos (cada tipo
   sabe el suyo); `calcularMultiplicador()` tiene implementación en la base y `SectorGeneral` la
   **sobrescribe** llamando a `super` y aplicando el 0,8. Quien calcula un precio no pregunta el tipo.
-- `Evento` → `Recital`: `getTipo()` abstracto; `Recital` agrega género y artistas.
 - **Por qué clase abstracta y no interfaz.** Porque hay **estado y código común** (código, piso, distancia,
   el multiplicador base). Una interfaz no puede tener atributos. `ReglaDeVenta`, en cambio, es interfaz
   porque no comparte nada más que el contrato.
@@ -307,13 +301,13 @@ La cátedra enseña ocho patrones GRASP. Dónde está cada uno:
 | Patrón | Qué dice (cátedra) | Dónde se ve | Cómo defenderlo |
 |---|---|---|---|
 | **Experto en información** | La responsabilidad va a quien tiene los datos | `Funcion.estaDisponible` (tiene las entradas) · `Compra.calcularTotal` (tiene entradas, paquetes, cargos, promo) · `Sector.calcularMultiplicador` (tiene piso y distancia) · `Entrada.puedeDevolverse` (tiene estado y función) · `Preventa.estaVigente` | "¿Quién sabe si A-3 está libre? La función, porque tiene sus entradas. Por eso no lo sabe el asiento ni la boletería." |
-| **Creador** | B crea A si lo contiene, lo registra, lo usa o tiene los datos | `Compra.agregarEntrada` crea `Entrada` (la contiene) · `Boleteria.iniciarCompra` crea `Compra` y `confirmarCompra` crea `Pago` y `Factura` (las registra) · `SectorNumerado.generarAsientos` crea `Asiento` · `SectorFactory` | "Nadie hace `new Entrada` salvo `Compra`; nadie hace `new Pago` salvo la boletería." |
+| **Creador** | B crea A si lo contiene, lo registra, lo usa o tiene los datos | `Compra.agregarEntrada` crea `Entrada` (la contiene) · `Boleteria.iniciarCompra` crea `Compra` y `confirmarCompra` crea `Factura` (la registra) · `SectorNumerado.generarAsientos` crea `Asiento` · `Sector.crear` | "Nadie hace `new Entrada` salvo `Compra`; nadie hace `new Factura` salvo la boletería." |
 | **Controlador** | Primer objeto después de la UI; coordina y delega | `SedeController`, `VentaController` y, como fachada, `Boleteria` | Sección 4. |
-| **Bajo acoplamiento** | Depender de la menor cantidad de clases, nunca de sus detalles | La vista depende del controlador, no de `Funcion`/`Compra` para operar · `Boleteria` depende de `Repositorio<T>` y `ReglaDeVenta`, no de las implementaciones · `Cliente.getEmail()` oculta que el email está en `Cuenta` | "Agregar una regla o cambiar el formato de archivo no toca ni la vista ni la boletería." |
-| **Alta cohesión** | Cada clase hace pocas cosas muy relacionadas | `Cuenta` separada de `Cliente` · `Pago`, `Factura`, `Devolucion` separadas de `Compra` · `Estilo` concentra el look de Swing · `FacturaDialog` solo muestra el comprobante | "Una compra pagada no se vuelve 'factura'; la factura es otro objeto con otra responsabilidad." |
-| **Fabricación pura** | Clase inventada (no del dominio) para ordenar el diseño | `SectorFactory`, los repositorios, `FacturaArchivo`, `DatosIniciales`, los controladores, `Estilo` | "No existen en la boletería real; existen para que las clases del negocio queden limpias." |
+| **Bajo acoplamiento** | Depender de la menor cantidad de clases, nunca de sus detalles | La vista depende del controlador, no de `Funcion`/`Compra` para operar · `Boleteria` depende de `Repositorio<T>` y `ReglaDeVenta`, no de las implementaciones | "Agregar una regla o cambiar el formato de archivo no toca ni la vista ni la boletería." |
+| **Alta cohesión** | Cada clase hace pocas cosas muy relacionadas | `Factura` y `Devolucion` separadas de `Compra` · `Estilo` concentra el look de Swing · `FacturaDialog` solo muestra el comprobante | "Una compra pagada no se vuelve 'factura'; la factura es otro objeto con otra responsabilidad." |
+| **Fabricación pura** | Clase inventada (no del dominio) para ordenar el diseño | Los repositorios, `DatosIniciales`, los controladores, `Estilo` | "No existen en la boletería real; existen para que las clases del negocio queden limpias." |
 | **Indirección** | Un intermediario desacopla dos componentes | `Repositorio<T>` entre `Boleteria` y los archivos · los controladores entre Swing y el modelo | Igual que `ServicioLog` en el apunte: si cambia el archivo, cambia solo el repositorio. |
-| **Polimorfismo** | Comportamiento según el tipo, sin `if`/`switch` | `ReglaDeVenta.validar`, `Sector.calcularMultiplicador`, `Sector.getCapacidad`, `Evento.getTipo` | "El único `switch` por tipo está en `SectorFactory`, que es justamente el lugar donde se decide qué crear." |
+| **Polimorfismo** | Comportamiento según el tipo, sin `if`/`switch` | `ReglaDeVenta.validar`, `Sector.calcularMultiplicador`, `Sector.getCapacidad` | "El único `switch` por tipo está en `Sector.crear`, que es justamente el lugar donde se decide qué crear." |
 | **Variaciones protegidas** | Lo que cambia, detrás de una interfaz estable | `ReglaDeVenta` (las reglas cambian) · `Repositorio<T>` (el medio de persistencia cambia) · `Pantalla` (cada pantalla refresca distinto) | "Identificamos qué iba a cambiar y lo pusimos detrás de una interfaz." |
 
 ---
@@ -322,10 +316,10 @@ La cátedra enseña ocho patrones GRASP. Dónde está cada uno:
 
 | Principio | Dónde se cumple | Dónde se podría mejorar (decirlo antes de que lo pregunten) |
 |---|---|---|
-| **S** Responsabilidad única | `Cuenta` ≠ `Cliente` · `Factura` ≠ `Compra` · `FacturaArchivo` solo escribe · vista ≠ controlador ≠ modelo | `Boleteria` tiene muchas operaciones (es la fachada). Están agrupadas por sección y cada una delega, pero si creciera habría que dividirla en servicios (sedes, cuentas, ventas). |
-| **O** Abierto/Cerrado | Regla nueva = clase nueva + una línea en `DatosIniciales` · tipo de evento nuevo = subclase de `Evento` · cargo o promoción nuevos = datos, no código | Un tipo de sector nuevo obliga a tocar el `switch` de `SectorFactory` y el formato del archivo. Es aceptable: es el único lugar. |
+| **S** Responsabilidad única | `Factura` ≠ `Compra` · `Devolucion` ≠ `Entrada` · vista ≠ controlador ≠ modelo | `Boleteria` tiene muchas operaciones (es la fachada). Están agrupadas por sección y cada una delega, pero si creciera habría que dividirla en servicios (sedes, cuentas, ventas). |
+| **O** Abierto/Cerrado | Regla nueva = clase nueva + una línea en `DatosIniciales` · promoción nueva = datos, no código | Un tipo de sector nuevo obliga a tocar el `switch` de `Sector.crear` y el formato del archivo. Es aceptable: es el único lugar. |
 | **L** Sustitución de Liskov | `SectorGeneral` y `SectorNumerado` se usan como `Sector` en toda la boletería y en la `Funcion`; ninguna subclase lanza "no soportado" | `Funcion.estaDisponible` pregunta `instanceof SectorNumerado` para saber si hay que validar el asiento. Se justifica porque un sector general no tiene asientos (no es que "no sepa" hacerlo, es que el concepto no existe). |
-| **I** Segregación de interfaces | `ReglaDeVenta` y `Pantalla` tienen un solo método · `FacturaArchivo` no implementa `Repositorio` porque no carga | — |
+| **I** Segregación de interfaces | `ReglaDeVenta` y `Pantalla` tienen un solo método · `Factura` se guarda sola en vez de forzar un repositorio con `cargarTodos()` vacío | — |
 | **D** Inversión de dependencias | `Boleteria` depende de `Repositorio<T>` y `ReglaDeVenta` (interfaces); los controladores reciben `Boleteria` por constructor; las pantallas reciben el controlador por constructor | `Boleteria` crea sus repositorios con `new` en vez de recibirlos. Para un test con repositorio en memoria habría que inyectarlos. |
 
 ---
@@ -336,10 +330,10 @@ La cátedra enseña ocho patrones GRASP. Dónde está cada uno:
 
 | Tipo | Cuándo la usamos | Ejemplos |
 |---|---|---|
-| **Excepciones propias del negocio** (`extends Exception`, *checked*) | Situaciones del negocio que el usuario tiene que ver y que quien llama **está obligado** a manejar. Al ser checked, el compilador no deja ignorarlas. | `SeleccionInvalidaException` (regla de venta o asiento ocupado), `ReservaVencidaException` (pasaron los 5 minutos), `DevolucionNoPermitidaException` (faltan menos de 48 hs o no está pagada), `AutenticacionException` (email o contraseña incorrectos) |
-| `IllegalArgumentException` (*unchecked*, de Java) | Datos inválidos: nombre vacío, DNI mal formado, código promocional inexistente, sede repetida. | Constructores de `Sede`, `Sector`, `Cliente`, `Cuenta`…, `Boleteria.agregarSede`, `Boleteria.aplicarCodigoPromocional` |
+| **Excepciones propias del negocio** (`extends Exception`, *checked*) | Situaciones del negocio que el usuario tiene que ver y que quien llama **está obligado** a manejar. Al ser checked, el compilador no deja ignorarlas. | `SeleccionInvalidaException` (regla de venta o asiento ocupado), `ReservaVencidaException` (pasaron los 5 minutos), `DevolucionNoPermitidaException` (faltan menos de 48 hs o no está pagada). Un login fallido **no** es excepción: `iniciarSesion` devuelve `Optional` vacío, porque es un resultado esperable y no un error. |
+| `IllegalArgumentException` (*unchecked*, de Java) | Datos inválidos: nombre vacío, DNI mal formado, código promocional inexistente, sede repetida. | Constructores de `Sede`, `Sector`, `Cliente`…, `Boleteria.agregarSede`, `Boleteria.aplicarCodigoPromocional` |
 | `IllegalStateException` (*unchecked*, de Java) | Operación que no corresponde al estado actual del objeto. | `Compra.verificarReservada` (agregar algo a una compra ya pagada), `Boleteria.verificarSinFunciones` (dar de baja una sede con funciones), `PaqueteVIP.reservarCupo` sin cupo |
-| `IOException` (*checked*, de Java) | Error al leer o escribir `datos/`. | Repositorios, `FacturaArchivo` |
+| `IOException` (*checked*, de Java) | Error al leer o escribir `datos/`. | Repositorios, `Factura.guardar` |
 
 **Por qué las propias son checked.** Porque son parte del contrato del método: `confirmarCompra` *puede*
 fallar porque la reserva venció y quien la llama tiene que decidir qué hacer (mostrar el mensaje y
@@ -364,8 +358,8 @@ distinto que `catch (SeleccionInvalidaException ex)`).
 | `controlador/VentaController.reservar()` | `SeleccionInvalidaException`, `IllegalStateException` | **Cancela la compra** (libera asientos y cupo VIP) y **relanza**: el controlador deja el modelo consistente, la vista muestra. |
 | `modelo/Boleteria.confirmarCompra()` | `IOException` al guardar la factura | La venta **ya está confirmada**; si falla el archivo se avisa por consola pero no se pierde la compra. Decisión de negocio: antes perder un comprobante en disco que una venta. |
 | `modelo/persistencia/SedeRepositorioArchivo.cargarTodos()` | `RuntimeException` por línea | La envuelve en una `IOException` con el número de registro: "sectores.txt, registro 7 inválido: …". |
-| `modelo/ventas/Cuenta.hashear()` | `NoSuchAlgorithmException` | La convierte en `IllegalStateException`: SHA-256 siempre existe en Java; si no está, es un error de entorno, no del usuario. |
-| `DemoFlujoCompra` | Las cuatro propias + `IllegalArgumentException` | Muestra por consola cada caso de error del flujo. |
+| `modelo/ventas/Cliente.hashear()` | `NoSuchAlgorithmException` | La convierte en `IllegalStateException`: SHA-256 siempre existe en Java; si no está, es un error de entorno, no del usuario. |
+| `DemoFlujoCompra` | Las tres propias + `IllegalArgumentException` | Muestra por consola cada caso de error del flujo. |
 
 **Regla que seguimos:** el modelo lanza, el controlador deja todo consistente, la vista muestra.
 Ninguna pantalla decide qué es válido.
@@ -385,7 +379,7 @@ en palabras de la clase, "el tipo estándar que describe bien el error".
 | Capturar la excepción más específica | Cada `catch` nombra el tipo. El único `catch (Exception)` está en `Estilo.aplicarGlobal()` al configurar el look & feel: `setLookAndFeel` declara cuatro excepciones chequeadas distintas y la reacción es la misma para todas (avisar por consola y seguir con el look & feel por defecto). |
 | Varios `catch` y multi-catch | `PanelModificacionSede` separa `IllegalArgumentException \| IllegalStateException` de `IOException`. `VentaController.reservar` y `PanelVenta.reservar` usan multi-catch para `SeleccionInvalidaException \| IllegalStateException` porque las tratan igual. |
 | `finally` para dejar todo consistente | `VentaController.pagar`: pase lo que pase, `compra = null` en el `finally`. |
-| Encadenar con la causa (`new MiException(msg, causa)`) | `SedeRepositorioArchivo` envuelve el error de parseo en una `IOException` con la causa y el número de registro. `Cuenta.hashear` envuelve `NoSuchAlgorithmException` en `IllegalStateException` con la causa. |
+| Encadenar con la causa (`new MiException(msg, causa)`) | `SedeRepositorioArchivo` envuelve el error de parseo en una `IOException` con la causa y el número de registro. `Cliente.hashear` envuelve `NoSuchAlgorithmException` en `IllegalStateException` con la causa. |
 | try-with-resources para archivos | Los tres métodos que abren archivos (`SedeRepositorioArchivo.guardarTodos` y `leerLineas`, `ClienteRepositorioArchivo.guardarTodos`) usan `try (BufferedReader ...)` / `try (BufferedWriter ...)`. |
 | Mensajes claros al usuario, sin `printStackTrace` | No hay ningún `printStackTrace` en el proyecto. Las pantallas muestran `getMessage()` en la barra de aviso o en un diálogo. |
 | No usar excepciones para el flujo normal | Las consultas devuelven `boolean` u `Optional` (`Funcion.estaDisponible`, `buscarSede`, `Promocion.coincide`). La excepción se lanza solo cuando se intenta la operación igual. |
@@ -407,13 +401,13 @@ minutos (`Compra.MINUTOS_RESERVA`) es lo que hacen las ticketeras reales.
 1. **Elegir.** La pantalla pide `funcionesDisponibles()` y, por función, los sectores de su sede. Antes de
    dibujar el mapa llama a `liberarReservasVencidas()`: así un asiento cuya reserva venció aparece libre.
 2. **Reservar.** `VentaController.reservar` → `Boleteria.iniciarCompra` (crea la `Compra` con
-   `vencimiento = ahora + 5'` y le aplica los cargos vigentes) → `Boleteria.reservarAsientos` (verifica
+   `vencimiento = ahora + 5'`) → `Boleteria.reservarAsientos` (verifica
    disponibilidad, valida **todas** las reglas y recién entonces `compra.agregarEntrada` por asiento).
    Si algo falla, no queda ninguna entrada creada: la validación va antes de la creación.
 3. **Esperar.** Un `Timer` de Swing llama a `tic()` cada segundo; la vista pregunta al controlador
    `segundosRestantes()` y `verificarVencimiento()`. Si venció, el controlador vence la compra (los
    asientos se liberan) y la pantalla vuelve al inicio.
-4. **Pagar.** `Boleteria.confirmarCompra` crea el `Pago`, llama a `compra.confirmar(pago, ahora)` (que
+4. **Pagar.** `Boleteria.confirmarCompra` llama a `compra.confirmar(medio, nroOperacion, ahora)` (que
    vuelve a chequear el vencimiento: la pantalla pudo quedar abierta), pasa las entradas a `PAGADA`,
    registra la compra en el cliente, crea la `Factura` y la guarda.
 
@@ -495,11 +489,11 @@ Usamos las definiciones del apunte de la cátedra ("Relaciones entre clases"):
 
 | Relación | Definición (apunte) | En el TPO | Por qué esa y no otra |
 |---|---|---|---|
-| **Composición** (◆) | Las partes solo existen asociadas al compuesto | `Sede` ◆ `Sector` · `SectorNumerado` ◆ `Asiento` · `Evento` ◆ `Funcion` · `Funcion` ◆ `Preventa` (0..1) · `Compra` ◆ `Entrada` · `Compra` ◆ `Pago` (0..1) · `Cliente` ◆ `Cuenta` | Un sector sin sede no tiene sentido; una entrada sin compra tampoco. Las partes se crean desde el todo (Creador). |
-| **Agregación** (◇) | Las partes pueden formar parte de distintos agregados | `Recital` ◇ `Artista` · `Compra` ◇ `PaqueteVIP` · `Compra` ◇ `Cargo` | El mismo artista toca en varios recitales; el mismo cargo del 12 % se aplica a todas las compras; el paquete existe antes de la compra. |
+| **Composición** (◆) | Las partes solo existen asociadas al compuesto | `Sede` ◆ `Sector` · `SectorNumerado` ◆ `Asiento` · `Evento` ◆ `Funcion` · `Funcion` ◆ `Preventa` (0..1) · `Compra` ◆ `Entrada` | Un sector sin sede no tiene sentido; una entrada sin compra tampoco. Las partes se crean desde el todo (Creador). |
+| **Agregación** (◇) | Las partes pueden formar parte de distintos agregados | `Compra` ◇ `PaqueteVIP` | El paquete existe antes de la compra y el mismo paquete se suma a muchas compras. |
 | **Asociación** (→) | Conexión estructural; navegable en un sentido | `Funcion` → `Sede` · `Entrada` → `Sector`, `Asiento` · `Cliente` — `Compra` (bidireccional) · `Factura` → `Compra` · `Devolucion` → `Entrada` · `Boleteria` → sus colecciones | La función "se realiza en" una sede pero no la contiene. Cliente–Compra es bidireccional porque la compra sabe su cliente y el cliente su historial. |
-| **Dependencia** (- - >) | Relación de uso | `ReglaDeVenta` ··> `SeleccionInvalidaException` · `SectorFactory` ··> `Sector` · `Boleteria` ··> excepciones | Se usan en un método, no se guardan como atributo. |
-| **Herencia** (△) | Generalización/especialización | `Sector` ◁ `SectorNumerado`, `SectorGeneral` · `Evento` ◁ `Recital` | "Es un": un sector general **es un** sector. |
+| **Dependencia** (- - >) | Relación de uso | `ReglaDeVenta` ··> `SeleccionInvalidaException` · `SedeRepositorioArchivo` ··> `Sector.crear` · `Boleteria` ··> excepciones | Se usan en un método, no se guardan como atributo. |
+| **Herencia** (△) | Generalización/especialización | `Sector` ◁ `SectorNumerado`, `SectorGeneral` | "Es un": un sector general **es un** sector. |
 | **Realización** (△ punteada) | Implementar una interfaz | `ReglaDeVenta` ◁· `NoDejarAsientoSuelto`, `RequiereCodigoPreventa` · `Repositorio` ◁· los repositorios de archivo | Contrato sin estado compartido. |
 
 **Multiplicidades que vale la pena saber:** `Sede 1 — 1..* Sector` (una sede necesita al menos un
@@ -520,8 +514,7 @@ Cosas del código que conviene poder justificar porque son temas de la materia:
   para la selección en el mapa: sin repetidos y en el orden en que se marcaron. `HashSet` en
   `NoDejarAsientoSuelto` para comparar ocupados rápido. `Optional` en `buscarSede`, `buscarAsiento`,
   `buscarEntrada` para no devolver `null`. Streams para filtrar y sumar (`calcularSubtotal`, `buscarFunciones`).
-- **`equals` y `hashCode`.** Definidos en `Asiento` (fila + número), `Sector` (código) y `Artista`
-  (nombre sin mayúsculas). Sin eso, `set.contains(asiento)` o `sectores.contains(sector)` compararían
+- **`equals` y `hashCode`.** Definidos en `Asiento` (fila + número) y `Sector` (código). Sin eso, `set.contains(asiento)` o `sectores.contains(sector)` compararían
   referencias y dos `new Asiento("A", 1)` serían distintos.
 - **Enums con comportamiento.** `EstadoEntrada.estaActiva()`, `MedioPago` y `TipoSector` con descripción
   y `toString()` para mostrarlos en los combos sin un `switch` en la vista.
@@ -566,10 +559,11 @@ Lo que las clases 13 y 14 piden de una interfaz, y cómo está resuelto:
 |---|---|---|
 | `Estacionamiento`, interfaz `Adicional` | Se quitó | La devolución pidió centrar el proyecto en la venta de entradas. El único adicional que quedó es `PaqueteVIP`, y sin una interfaz para un solo caso (YAGNI). |
 | `PoliticaPrecio`, `PrecioEstandar`, `PrecioDinamico` | Se quitó | El precio dinámico por ocupación era lo más complejo y lo menos central. El precio quedó en `Funcion.calcularPrecio(sector)`. Si vuelve, se agrega como Strategy igual que las reglas. |
-| `ExperienciaInmersiva` | Se quitó | Un segundo tipo de evento sin funcionalidad propia. `Evento` sigue abstracta para agregarlo cuando sume. |
+| `ExperienciaInmersiva` | Se quitó | Un segundo tipo de evento sin funcionalidad propia. `Evento` quedó como clase concreta: hoy un evento es un recital. |
 | `TipoCargo` (servicio / impuesto) | Se quitó | Un cargo es un nombre y un porcentaje; el tipo no cambiaba ningún cálculo. |
 | `EstadoEntrada.USADA` | Pasó a `DEVUELTA` | El control de acceso al show está fuera de alcance; la devolución sí es parte del flujo. |
-| — | Se agregó: reserva de 5 min, `EstadoCompra`, `Pago`, `MedioPago`, `Factura`, `Devolucion`, `Promocion`, `Cuenta`, `SectorFactory`, `Repositorio`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` | Es lo que pidió la devolución: "armar el flujo de compra completo como un caso real". |
+| — | Se agregó: reserva de 5 min, `EstadoCompra`, `MedioPago`, `Factura`, `Devolucion`, `Promocion`, `Repositorio`, `ReservaVencidaException`, `DevolucionNoPermitidaException` | Es lo que pidió la devolución: "armar el flujo de compra completo como un caso real". |
+| `Recital`, `Artista`, `Cuenta`, `Pago`, `Cargo`, `SectorFactory`, `FacturaArchivo`, `AutenticacionException` | Se quitaron en la entrega 2 | Eran clases sin estado propio, sin comportamiento propio o un segundo ejemplo de un patrón que ya estaba cubierto. Su lógica pasó a `Evento`, `Cliente`, `Compra`, `Sector.crear` y `Factura.guardar`: 25 clases en vez de 33 sin perder ninguna funcionalidad. |
 
 El diagrama v3 muestra el diseño acotado y el v4 es el que coincide con el código.
 
@@ -600,9 +594,9 @@ La última diapositiva de la clase 14 lista lo que tiene que tener el TPO termin
 
 | Pide la cátedra | Estado | Dónde |
 |---|---|---|
-| 12 clases o más | ✔ 33 clases y 5 enums en el modelo, más las de la vista | `modelo/`, `vista/` |
+| 12 clases o más | ✔ 25 clases y 5 enums en el modelo, más las de la vista | `modelo/`, `vista/` |
 | 3 patrones o buenas prácticas | ✔ Singleton, Strategy, Factory, Repository, MVC, GRASP | [sección 4](#4-los-patrones-uno-por-uno) |
-| 1 excepción propia y 3 try-catch | ✔ 4 propias; try/catch en 12 lugares | [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan) |
+| 1 excepción propia y 3 try-catch | ✔ 3 propias; try/catch en 13 clases | [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan) |
 | 6 interfaces Swing (4 ABM + 2 de negocio) | ✔ 4 ABM de sedes + Venta de entradas y Devoluciones (negocio) + Inicio (portada) | `vista/` |
 | 3 diálogos | ✔ confirmación de baja, error de arranque, comprobante | [sección 12](#12-la-interfaz-swing-decisiones) |
 | Menú principal que navega entre ventanas | ✔ `JMenuBar` (Inicio / Sedes / Ventas / Ayuda, con atajos) + `CardLayout` | `VentanaPrincipal` |
@@ -625,7 +619,7 @@ ninguna pantalla. (Hoy ese límite está solo en la vista, como tope del mapa.)
 
 **¿Y un tipo de sector nuevo, por ejemplo "palco"?**
 Subclase de `Sector` con su `getCapacidad()` y su multiplicador, un valor en `TipoSector`, un `case` en
-`SectorFactory` y el formato en `SedeRepositorioArchivo`. Es el único cambio que toca más de un archivo,
+`Sector.crear` y el formato en `SedeRepositorioArchivo`. Es el único cambio que toca más de un archivo,
 y está localizado en la creación y la persistencia.
 
 **¿Por qué el asiento no sabe si está ocupado?**
@@ -648,7 +642,7 @@ tocó (se reparte entre las entradas al pagar, en `Compra.pagar`). Se avisa en l
 
 **¿Dónde está el polimorfismo?**
 `Sector.calcularMultiplicador` / `getCapacidad` (numerado vs general), `ReglaDeVenta.validar` (cada regla
-valida distinto), `Evento.getTipo`. Y la prueba de que se usa: `Boleteria` y `Funcion` trabajan con
+valida distinto). Y la prueba de que se usa: `Boleteria` y `Funcion` trabajan con
 `Sector` y `ReglaDeVenta`, nunca con las clases concretas, salvo el `switch` de la fábrica.
 
 **¿Por qué Singleton y no pasar la boletería por parámetro?**

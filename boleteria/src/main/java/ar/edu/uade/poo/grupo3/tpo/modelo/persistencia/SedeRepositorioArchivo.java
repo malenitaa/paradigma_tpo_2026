@@ -3,7 +3,6 @@ package ar.edu.uade.poo.grupo3.tpo.modelo.persistencia;
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.TipoSector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Asiento;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorFactory;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorGeneral;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorNumerado;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
@@ -73,7 +72,7 @@ public class SedeRepositorioArchivo implements Repositorio<Sede> {
         if ("NUM".equalsIgnoreCase(p[1].trim())) {
             if (detalle.matches("\\d+x\\d+")) {
                 String[] fx = detalle.split("x");
-                sede.agregarSector(SectorFactory.crearNumerado(codigo, nombre, piso, distancia,
+                sede.agregarSector(Sector.crearNumerado(codigo, nombre, piso, distancia,
                         Integer.parseInt(fx[0]), Integer.parseInt(fx[1])));
             } else {
                 SectorNumerado sector = new SectorNumerado(codigo, nombre, piso, distancia);
@@ -84,7 +83,7 @@ public class SedeRepositorioArchivo implements Repositorio<Sede> {
                 sede.agregarSector(sector);
             }
         } else {
-            sede.agregarSector(SectorFactory.crear(TipoSector.GENERAL, codigo, nombre, piso, distancia,
+            sede.agregarSector(Sector.crear(TipoSector.GENERAL, codigo, nombre, piso, distancia,
                     0, 0, Integer.parseInt(detalle)));
         }
     }

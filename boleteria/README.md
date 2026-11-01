@@ -35,7 +35,7 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | 4 pantallas Swing de ABM | Sedes: **Consulta**, **Alta**, **Modificación** y **Baja** (`vista/Panel*Sede*.java` + `controlador/SedeController.java`) |
 | Adelanto: pantalla de **Venta de entradas** | `vista/PanelVenta.java` + `controlador/VentaController.java` + `vista/FacturaDialog.java` (mapa de asientos, reserva de 5 min, promo, pago y factura) |
 | Persistencia en archivos de texto | carpeta `datos/` (ver abajo) |
-| Excepción personalizada del negocio | `modelo/excepcion/`: `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` |
+| Excepción personalizada del negocio | `modelo/excepcion/`: `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` |
 | Al menos 3 try/catch | ver tabla de try/catch |
 | Al menos 3 patrones implementados | ver tabla de patrones |
 
@@ -43,8 +43,12 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 
 - Se quitaron `Estacionamiento`, `ExperienciaInmersiva`, `PrecioDinamico`/`PoliticaPrecio`, `Adicional` y `TipoCargo`
   para centrar el proyecto en la venta de entradas.
-- Se agregaron: reserva de **5 minutos** (`Compra.MINUTOS_RESERVA`), `Pago` y `MedioPago`, `Devolucion`
-  (hasta 48 hs antes), `Factura`, `Promocion` por código, y registro de cuenta (`Cuenta`) con inicio de sesión.
+- Se agregaron: reserva de **5 minutos** (`Compra.MINUTOS_RESERVA`), `MedioPago`, `Devolucion`
+  (hasta 48 hs antes), `Factura`, `Promocion` por código, y registro de cuenta con inicio de sesión
+  (`Cliente` guarda el hash de la contraseña).
+- En la entrega 2 se quitaron `Recital`, `Artista`, `Cuenta`, `Pago`, `Cargo`, `SectorFactory`, `FacturaArchivo`
+  y `AutenticacionException`: su lógica pasó a `Evento`, `Cliente`, `Compra`, `Sector.crear` y `Factura.guardar`
+  (25 clases en el modelo en vez de 33, sin perder funcionalidad).
 
 ## Patrones y buenas prácticas implementados
 
@@ -53,11 +57,11 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | **Singleton** | `modelo.Boleteria.getInstancia()` — una sola boletería en todo el sistema |
 | **Controlador (GRASP)** | `Boleteria` recibe todas las operaciones del sistema: es la fachada del modelo (no confundir con los controladores de MVC) |
 | **Strategy** | `modelo.reglas.ReglaDeVenta` (`NoDejarAsientoSuelto`, `RequiereCodigoPreventa`): la boletería valida la lista de reglas sin conocerlas |
-| **Factory** | `modelo.infraestructura.SectorFactory` crea los sectores (lo usan las pantallas y el repositorio) |
+| **Factory** | `modelo.infraestructura.Sector.crear(...)` (método de fábrica estático) crea los sectores (lo usan las pantallas y el repositorio) |
 | **Repository** | `modelo.persistencia.Repositorio<T>` con `SedeRepositorioArchivo` y `ClienteRepositorioArchivo` |
 | **MVC** | **Vista** `vista.Panel*` (arma la pantalla y muestra mensajes) → **Controlador** `controlador.SedeController` / `controlador.VentaController` (recibe lo que hace el usuario, lleva la compra en curso) → **Modelo** `modelo.Boleteria` y el dominio. Ver [diagrama MVC](../diagramas/arquitectura/mvc.puml) |
 | **Creador / Experto (GRASP)** | `Compra` crea sus `Entrada`; `Funcion` sabe qué asientos están libres; `Sector` calcula su multiplicador |
-| **Herencia y polimorfismo** | `Sector` → `SectorNumerado` / `SectorGeneral` (`getCapacidad`, `calcularMultiplicador`); `Evento` → `Recital` |
+| **Herencia y polimorfismo** | `Sector` → `SectorNumerado` / `SectorGeneral` (`getCapacidad`, `calcularMultiplicador`) |
 
 ## Manejo de excepciones (try/catch)
 
@@ -66,7 +70,7 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 3. `vista.PanelBajaSede.darDeBaja()` — no se puede dar de baja una sede con funciones (`IllegalStateException`) y `IOException`.
 4. `vista.BoleteriaApp` — error al leer los archivos de `datos/` al iniciar.
 5. `modelo.Boleteria.confirmarCompra()` — si falla guardar la factura, la venta no se pierde.
-6. `DemoFlujoCompra` — `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` y `AutenticacionException`.
+6. `DemoFlujoCompra` — `SeleccionInvalidaException`, `ReservaVencidaException` y `DevolucionNoPermitidaException`.
 
 ## Archivos de datos (`datos/`)
 
@@ -92,14 +96,14 @@ ar.edu.uade.poo.grupo3.tpo
 │                        Reciben lo que hace el usuario y se lo piden al modelo.
 ├── modelo/              Todo el dominio y su persistencia
 │   ├── Boleteria        fachada del modelo (Singleton + Controlador GRASP)
-│   ├── infraestructura/ Sede, Sector, SectorNumerado, SectorGeneral, Asiento, SectorFactory
-│   ├── eventos/         Evento, Recital, Artista, Funcion, Preventa
-│   ├── ventas/          Cliente, Cuenta, Compra, Entrada, Cargo, PaqueteVIP, Pago, Devolucion, Factura
+│   ├── infraestructura/ Sede, Sector (con la fábrica Sector.crear), SectorNumerado, SectorGeneral, Asiento
+│   ├── eventos/         Evento, Funcion, Preventa
+│   ├── ventas/          Cliente, Compra, Entrada, PaqueteVIP, Devolucion, Factura
 │   ├── promociones/     Promocion
 │   ├── reglas/          ReglaDeVenta, NoDejarAsientoSuelto, RequiereCodigoPreventa
 │   ├── excepcion/       excepciones del negocio
 │   ├── enums/           EstadoFuncion, EstadoCompra, EstadoEntrada, MedioPago, TipoSector
-│   └── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo, FacturaArchivo
+│   └── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo
 ├── DatosIniciales       configuración y datos de ejemplo
 └── DemoFlujoCompra      flujo de compra completo por consola
 ```

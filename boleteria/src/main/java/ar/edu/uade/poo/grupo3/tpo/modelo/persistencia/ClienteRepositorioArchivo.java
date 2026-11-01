@@ -1,7 +1,6 @@
 package ar.edu.uade.poo.grupo3.tpo.modelo.persistencia;
 
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cliente;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cuenta;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -26,7 +25,7 @@ public class ClienteRepositorioArchivo implements Repositorio<Cliente> {
         for (String linea : SedeRepositorioArchivo.leerLineas(archivo)) {
             String[] p = linea.split("\\|", -1);
             if (p.length >= 4) {
-                clientes.add(new Cliente(p[0], p[1], Cuenta.desdeHash(p[2], p[3])));
+                clientes.add(Cliente.desdeArchivo(p[0], p[1], p[2], p[3]));
             }
         }
         return clientes;
@@ -40,7 +39,7 @@ public class ClienteRepositorioArchivo implements Repositorio<Cliente> {
             writer.newLine();
             for (Cliente c : clientes) {
                 writer.write(String.join("|", c.getDni(), c.getNombre(), c.getEmail(),
-                        c.getCuenta().getHashContrasenia()));
+                        c.getHashContrasenia()));
                 writer.newLine();
             }
         }

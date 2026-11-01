@@ -1,5 +1,9 @@
 package ar.edu.uade.poo.grupo3.tpo.modelo.ventas;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -15,7 +19,7 @@ public class Factura {
     private final Compra compra;
 
     public Factura(Compra compra, LocalDateTime fecha) {
-        if (compra == null || compra.getPago() == null) {
+        if (compra == null || compra.getMedioPago() == null) {
             throw new IllegalArgumentException("Solo se factura una compra pagada");
         }
         this.numero = String.format("0001-%08d", secuencia++);
@@ -50,17 +54,23 @@ public class Factura {
             sb.append(String.format("%-40s %14s%n", "Promoción: " + compra.getPromocion().getDescripcion(),
                     "-" + pesos(compra.calcularDescuento())));
         }
-        for (Cargo c : compra.getCargos()) {
-            sb.append(String.format("%-40s %14s%n", c.toString(),
-                    pesos(c.aplicar(compra.calcularSubtotal() - compra.calcularDescuento()))));
-        }
+        sb.append(String.format("%-40s %14s%n", "Cargo por servicio (" + (int) Compra.CARGO_SERVICIO + "%)",
+                pesos(compra.calcularCargos())));
         sb.append(String.format("%-40s %14s%n", "TOTAL", pesos(compra.calcularTotal())));
         sb.append(linea);
-        sb.append("Pago: ").append(compra.getPago().getMedio())
-                .append(" · Operación ").append(compra.getPago().getNroOperacion()).append('\n');
+        sb.append("Pago: ").append(compra.getMedioPago())
+                .append(" · Operación ").append(compra.getNroOperacion()).append('\n');
         sb.append("Devoluciones hasta ").append(Devolucion.HORAS_LIMITE)
                 .append(" hs antes de la función\n(no se reintegran los cargos).\n");
         return sb.toString();
+    }
+
+    /** Escribe el comprobante como carpeta/FAC-0001-00000001.txt (una línea por renglón del texto). */
+    public Path guardar(Path carpeta) throws IOException {
+        Files.createDirectories(carpeta);
+        Path archivo = carpeta.resolve("FAC-" + numero + ".txt");
+        Files.writeString(archivo, generarTexto(), StandardCharsets.UTF_8);
+        return archivo;
     }
 
     private static String pesos(double monto) {

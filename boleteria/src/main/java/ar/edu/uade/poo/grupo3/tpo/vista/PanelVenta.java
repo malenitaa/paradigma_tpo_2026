@@ -433,8 +433,8 @@ public class PanelVenta extends JPanel implements Pantalla {
         double estimado = entradas * unitario + (paqueteVip.isSelected() && vip != null ? vip.getPrecio() : 0);
         subtotal.setText(entradas == 0 ? "—" : Estilo.pesos(estimado));
         descuento.setText("—");
-        cargos.setText(entradas == 0 ? "—" : "≈ " + Estilo.pesos(Math.round(estimado * 0.12)));
-        total.setText(entradas == 0 ? "—" : "≈ " + Estilo.pesos(estimado + Math.round(estimado * 0.12)));
+        cargos.setText(entradas == 0 ? "—" : "≈ " + Estilo.pesos(Math.round(estimado * Compra.CARGO_SERVICIO / 100)));
+        total.setText(entradas == 0 ? "—" : "≈ " + Estilo.pesos(estimado + Math.round(estimado * Compra.CARGO_SERVICIO / 100)));
         reloj.setText(" ");
     }
 

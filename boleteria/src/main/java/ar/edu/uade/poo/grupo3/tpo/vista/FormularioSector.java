@@ -2,7 +2,6 @@ package ar.edu.uade.poo.grupo3.tpo.vista;
 
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.TipoSector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorFactory;
 
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -75,7 +74,7 @@ public class FormularioSector extends JPanel {
 
     /** Crea el sector con la fábrica. Si un dato es inválido lanza IllegalArgumentException. */
     public Sector crearSector() {
-        return SectorFactory.crear((TipoSector) tipo.getSelectedItem(), codigo.getText(), nombre.getText(),
+        return Sector.crear((TipoSector) tipo.getSelectedItem(), codigo.getText(), nombre.getText(),
                 (Integer) piso.getValue(), ((Integer) distancia.getValue()).doubleValue(),
                 (Integer) filas.getValue(), (Integer) asientosPorFila.getValue(), (Integer) capacidad.getValue());
     }

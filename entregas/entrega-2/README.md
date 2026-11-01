@@ -7,8 +7,8 @@ El código está en [`boleteria/`](../../boleteria/). Esta tabla muestra dónde 
 | Pedido de la consigna | Dónde está |
 |---|---|
 | Código de las clases del diagrama, con los ajustes de la entrega 1 | `boleteria/src/main/java/ar/edu/uade/poo/grupo3/tpo/` · diagrama actualizado: [`diagrama_clases_v4`](../../diagramas/clases/diagrama_clases_v4.png) |
-| Al menos 3 patrones / buenas prácticas implementados | Singleton (`Boleteria`), Strategy (`ReglaDeVenta`), Factory (`SectorFactory`), Repository (`Repositorio<T>`), MVC con paquetes `vista` / `controlador` / `modelo` ([diagrama](../../diagramas/arquitectura/mvc.puml)), GRASP Controlador / Creador / Experto |
-| Excepción personalizada del negocio | `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException`, `AutenticacionException` |
+| Al menos 3 patrones / buenas prácticas implementados | Singleton (`Boleteria`), Strategy (`ReglaDeVenta`), Factory (`Sector.crear`), Repository (`Repositorio<T>`), MVC con paquetes `vista` / `controlador` / `modelo` ([diagrama](../../diagramas/arquitectura/mvc.puml)), GRASP Controlador / Creador / Experto |
+| Excepción personalizada del negocio | `SeleccionInvalidaException`, `ReservaVencidaException`, `DevolucionNoPermitidaException` |
 | Al menos 3 try/catch | Pantallas de alta, modificación, baja y venta; inicio de la app; guardado de facturas; `DemoFlujoCompra` |
 | 4 pantallas Swing de ABM | Sedes: Consulta, Alta, Modificación y Baja ([capturas](../../capturas/)) |
 | Primer avance de persistencia | `boleteria/datos/`: `sedes.txt`, `sectores.txt`, `clientes.txt` y `facturas/` |

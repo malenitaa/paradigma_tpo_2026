@@ -2,16 +2,14 @@ package ar.edu.uade.poo.grupo3.tpo;
 
 import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.TipoSector;
-import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Artista;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Preventa;
-import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Recital;
-import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorFactory;
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Evento;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 import ar.edu.uade.poo.grupo3.tpo.modelo.promociones.Promocion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.reglas.NoDejarAsientoSuelto;
 import ar.edu.uade.poo.grupo3.tpo.modelo.reglas.RequiereCodigoPreventa;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cargo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 
 import java.io.IOException;
@@ -34,7 +32,6 @@ public final class DatosIniciales {
     public static void inicializar(Boleteria boleteria) throws IOException {
         boleteria.agregarRegla(new RequiereCodigoPreventa());
         boleteria.agregarRegla(new NoDejarAsientoSuelto());
-        boleteria.agregarCargo(new Cargo("Cargo por servicio", 12));
         boleteria.agregarPromocion(new Promocion("BANCO20", 20, "Promo bancaria"));
         boleteria.agregarPromocion(new Promocion("FAN10", 10, "Club de fans"));
 
@@ -60,17 +57,17 @@ public final class DatosIniciales {
 
     private static void crearSedesDeEjemplo(Boleteria boleteria) {
         Sede esfera = new Sede("Esfera Las Vegas", "255 Sands Ave, Las Vegas, NV");
-        esfera.agregarSector(SectorFactory.crearNumerado("FLR", "Floor", 0, 5, 8, 16));
-        esfera.agregarSector(SectorFactory.crearNumerado("100", "Nivel 100", 1, 15, 6, 20));
-        esfera.agregarSector(SectorFactory.crearNumerado("200", "Nivel 200", 2, 30, 6, 24));
-        esfera.agregarSector(SectorFactory.crearNumerado("300", "Nivel 300", 3, 45, 5, 28));
-        esfera.agregarSector(SectorFactory.crearNumerado("400", "Nivel 400", 4, 60, 5, 30));
+        esfera.agregarSector(Sector.crearNumerado("FLR", "Floor", 0, 5, 8, 16));
+        esfera.agregarSector(Sector.crearNumerado("100", "Nivel 100", 1, 15, 6, 20));
+        esfera.agregarSector(Sector.crearNumerado("200", "Nivel 200", 2, 30, 6, 24));
+        esfera.agregarSector(Sector.crearNumerado("300", "Nivel 300", 3, 45, 5, 28));
+        esfera.agregarSector(Sector.crearNumerado("400", "Nivel 400", 4, 60, 5, 30));
         boleteria.agregarSede(esfera);
 
         Sede estadio = new Sede("Estadio Monumental", "Av. Figueroa Alcorta 7597, CABA");
-        estadio.agregarSector(SectorFactory.crear(TipoSector.GENERAL, "CAMPO", "Campo", 0, 10, 0, 0, 5000));
-        estadio.agregarSector(SectorFactory.crearNumerado("PSM", "Platea San Martín", 1, 40, 10, 30));
-        estadio.agregarSector(SectorFactory.crearNumerado("PBE", "Platea Belgrano", 1, 40, 10, 30));
+        estadio.agregarSector(Sector.crear(TipoSector.GENERAL, "CAMPO", "Campo", 0, 10, 0, 0, 5000));
+        estadio.agregarSector(Sector.crearNumerado("PSM", "Platea San Martín", 1, 40, 10, 30));
+        estadio.agregarSector(Sector.crearNumerado("PBE", "Platea Belgrano", 1, 40, 10, 30));
         boleteria.agregarSede(estadio);
     }
 
@@ -79,9 +76,8 @@ public final class DatosIniciales {
         if (esfera.isEmpty()) {
             return;
         }
-        Recital recital = new Recital(1, "Los Satélites — Órbita Tour",
-                "Show inmersivo en 360°", 120, "Rock");
-        recital.agregarArtista(new Artista("Los Satélites", "Argentina"));
+        Evento recital = new Evento(1, "Los Satélites — Órbita Tour", "Show en 360°", 120, "Rock");
+        recital.agregarArtista("Los Satélites");
         LocalDate hoy = LocalDate.now();
         Funcion f1 = new Funcion(1, recital, LocalDateTime.of(hoy.plusDays(15), LocalTime.of(21, 0)),
                 50000, esfera.get());

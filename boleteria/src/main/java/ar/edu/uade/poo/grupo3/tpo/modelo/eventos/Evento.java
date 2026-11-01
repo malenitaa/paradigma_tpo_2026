@@ -6,15 +6,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class Evento {
+/** Un espectáculo (recital, show) con sus funciones. Los artistas son nombres, sin repetidos. */
+public class Evento {
 
-    protected final int id;
-    protected String nombre;
-    protected String descripcion;
-    protected int duracionMinutos;
-    protected final List<Funcion> funciones;
+    private final int id;
+    private final String nombre;
+    private final String descripcion;
+    private final int duracionMinutos;
+    private final String genero;
+    private final List<String> artistas = new ArrayList<>();
+    private final List<Funcion> funciones = new ArrayList<>();
 
-    protected Evento(int id, String nombre, String descripcion, int duracionMinutos) {
+    public Evento(int id, String nombre, String descripcion, int duracionMinutos, String genero) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del evento es obligatorio");
         }
@@ -25,7 +28,17 @@ public abstract class Evento {
         this.nombre = nombre.trim();
         this.descripcion = descripcion == null ? "" : descripcion.trim();
         this.duracionMinutos = duracionMinutos;
-        this.funciones = new ArrayList<>();
+        this.genero = genero == null ? "" : genero.trim();
+    }
+
+    public void agregarArtista(String artista) {
+        if (artista == null || artista.isBlank()) {
+            throw new IllegalArgumentException("El nombre del artista es obligatorio");
+        }
+        boolean repetido = artistas.stream().anyMatch(a -> a.equalsIgnoreCase(artista.trim()));
+        if (!repetido) {
+            artistas.add(artista.trim());
+        }
     }
 
     public void agregarFuncion(Funcion funcion) {
@@ -41,6 +54,10 @@ public abstract class Evento {
 
     public List<Funcion> getFunciones() {
         return Collections.unmodifiableList(funciones);
+    }
+
+    public List<String> getArtistas() {
+        return Collections.unmodifiableList(artistas);
     }
 
     public int getId() {
@@ -59,7 +76,9 @@ public abstract class Evento {
         return duracionMinutos;
     }
 
-    public abstract String getTipo();
+    public String getGenero() {
+        return genero;
+    }
 
     @Override
     public String toString() {
