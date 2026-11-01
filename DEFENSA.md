@@ -169,12 +169,12 @@ escenario a ~1,0 lejos) y `porPiso = max(0,6; 1 − piso × 0,1)`. Un sector gen
 | `Cliente` | DNI, nombre, su `Cuenta` y su historial de compras. | Los datos de la persona. DNI validado con 7 u 8 dígitos. |
 | `Cuenta` | Email y **hash** de la contraseña. Verifica y cambia contraseña. | Separada de `Cliente` por responsabilidad única: la identidad (DNI, nombre) y el acceso (email, contraseña) cambian por motivos distintos. Guarda SHA-256, nunca la contraseña, porque el archivo `clientes.txt` es texto plano. |
 | `Compra` | Entradas, paquetes, cargos, promoción, pago, estado y **vencimiento de la reserva**. Calcula subtotal, descuento, cargos y total. | Es la experta en el total porque tiene todas las partes. **Crea sus entradas** (Creador). Controla su ciclo de vida con `verificarReservada()`: no se puede agregar nada a una compra que ya no está reservada. |
-| `Entrada` | Función, sector, asiento (null si es general), **precio congelado** y estado. Sabe si puede devolverse. | El precio se calcula y se guarda al crearla: si después cambia el precio base de la función, lo que pagó el cliente no cambia. |
+| `Entrada` | Función, sector, asiento (null si es general), **precio congelado**, lo que se pagó por ella y estado. Sabe si puede devolverse. | El precio se calcula y se guarda al crearla: si después cambia el precio base de la función, lo que pagó el cliente no cambia. |
 | `Cargo` | Nombre y porcentaje. `aplicar(monto)`. | Cargo por servicio como objeto y no como constante: la boletería tiene una lista de cargos vigentes y se los aplica a cada compra nueva. Agregar un impuesto es agregar un `Cargo`, no tocar código. |
 | `PaqueteVIP` | Nombre, precio, beneficios y **cupo**. | El cupo se reserva al agregarlo a una compra y se libera si la compra vence o se cancela. `reservarCupo()` y `liberarCupo()` son de paquete (sin `public`) para que solo `Compra` los use. |
 | `Pago` | Número de operación, medio, monto, fecha. | Registro, no cobro. Separado de `Compra` porque una compra reservada todavía no tiene pago (0..1). |
 | `Factura` | Número correlativo, fecha, la compra. Genera el texto del comprobante. | Solo se puede crear a partir de una compra pagada (lo valida el constructor). Es la única que sabe cómo se ve un comprobante. |
-| `Devolucion` | Entrada, motivo, fecha, monto a reintegrar. | El reintegro es el precio de la entrada **sin** los cargos: la regla está en `calcularReintegro()`, en un solo lugar. |
+| `Devolucion` | Entrada, motivo, fecha, monto a reintegrar. | El reintegro es lo que se pagó por la entrada (`Entrada.getValorPagado()`, con su parte del descuento) **sin** los cargos: la regla está en `calcularReintegro()`, en un solo lugar. |
 
 ### `modelo/promociones`, `modelo/reglas`, `modelo/excepcion`, `modelo/enums`
 
@@ -441,8 +441,8 @@ hace `DemoFlujoCompra` y el link "Demo: adelantar el reloj" de la pantalla (que 
 `Boleteria.devolverEntrada(codigo, motivo, ahora)` busca la entrada entre las compras confirmadas,
 pregunta `entrada.puedeDevolverse(ahora)` (pagada y 48 hs o más antes, o función cancelada), crea la
 `Devolucion` y pasa la entrada a `DEVUELTA`, con lo que el asiento vuelve a estar a la venta. El reintegro
-es el precio de la entrada sin cargos. La lógica está completa y probada en la demo; la pantalla es de la
-entrega final.
+es lo que se pagó por la entrada sin los cargos. La pantalla `PanelDevolucion` primero verifica el código y
+muestra el monto; recién ahí habilita el botón de devolver. La devolución no toca la venta en curso.
 
 ---
 
@@ -551,7 +551,7 @@ Lo que las clases 13 y 14 piden de una interfaz, y cómo está resuelto:
 | Tareas largas / `SwingWorker` | No hace falta: leer y escribir los `.txt` tarda milisegundos. Si la persistencia pasara a una base de datos remota, el guardado iría en un `SwingWorker` y `done()` mostraría el aviso. | — |
 | Tres formas de oyente (clase 14) | **Lambda** para los botones y los ítems de menú (`ActionListener` es interfaz funcional). **Clase anónima** en el ítem "Acerca de" de `VentanaPrincipal`. **Clase interna con nombre** `OyenteAsiento` en `PanelVenta`: cada botón del mapa recibe un oyente que sabe qué `Asiento` representa. Las tres hacen lo mismo; la lambda es la más corta y la clase con nombre sirve cuando el oyente necesita guardar datos. | `PanelVenta`, `VentanaPrincipal` |
 | Diálogos (la cátedra pide 3) | `showConfirmDialog` antes de dar de baja una sede, con `this` como padre para que sea **modal**. `showMessageDialog` de error si falla la carga inicial, con padre `null` porque todavía no existe la ventana. `FacturaDialog`, un `JDialog` propio `APPLICATION_MODAL` con la ventana como padre. | `PanelBajaSede`, `BoleteriaApp`, `FacturaDialog` |
-| Menú principal que navega entre ventanas | `JMenuBar` como en la clase 14, con los menús **Inicio**, **Sedes** (Consulta, Alta, Modificación, Baja), **Ventas** y **Ayuda**; cada `JMenuItem` tiene su `setAccelerator` (Ctrl+1 a Ctrl+4 para el ABM, Ctrl+V venta, Ctrl+Q salir) y hay un `addSeparator` antes de Salir. Las pantallas son tarjetas de un `CardLayout` en un solo `JFrame`: el menú llama a `ir(id)`, que muestra la tarjeta. Devoluciones figura deshabilitado (`setEnabled(false)`) hasta la entrega final. | `VentanaPrincipal.crearMenu` |
+| Menú principal que navega entre ventanas | `JMenuBar` como en la clase 14, con los menús **Inicio**, **Sedes** (Consulta, Alta, Modificación, Baja), **Ventas** y **Ayuda**; cada `JMenuItem` tiene su `setAccelerator` (Ctrl+1 a Ctrl+4 para el ABM, Ctrl+V venta, Ctrl+Q salir) y hay un `addSeparator` antes de Salir. Las pantallas son tarjetas de un `CardLayout` en un solo `JFrame`: el menú llama a `ir(id)`, que muestra la tarjeta. Devoluciones (Ctrl+D) abre la sexta pantalla. | `VentanaPrincipal.crearMenu` |
 | Refrescar al entrar | Interfaz `Pantalla.alMostrar()`: cada tarjeta recarga sus datos cuando se muestra, así la consulta ve la sede recién dada de alta. | `vista/Pantalla` |
 | Layouts | Solo los tres de la clase 13. `BorderLayout` en la ventana y en casi todos los paneles (encabezado `NORTH`, contenido `CENTER`, barra de botones `SOUTH`); `GridLayout` en el formulario de sector (3 × 6), en las métricas del inicio (1 × 4) y en el mapa de asientos (una fila por letra, una columna por asiento más la etiqueta de la fila); `FlowLayout` para alinear botones. `Estilo.columna()` apila componentes con un `GridLayout` de una columna dentro del `NORTH` de un `BorderLayout`, para que no se estiren. | pantallas |
 | Componentes estándar, sin dibujo propio | Todo son componentes de la clase 13: los asientos son `JButton` con `setBackground` según el estado (libre, seleccionado, reservado, ocupado); el escenario y los avisos son `JLabel` opacos con fondo; las tablas son `JTable` + `DefaultTableModel`; los números son `JSpinner`. No hay `paintComponent` ni `Graphics` en la vista. | `PanelVenta`, `Aviso` |
@@ -586,7 +586,6 @@ Mejor decirlo que esperar a que lo encuentren:
   al reiniciar la app el archivo `FAC-0001-00000001.txt` se vuelve a escribir. Hay que persistir la
   secuencia junto con las compras.
 - **Eventos, funciones y compras no se persisten.** Se crean en memoria en `DatosIniciales`.
-- **Pantalla de devoluciones y los dialogs** quedan para la entrega final (la lógica ya está).
 - **Inversión de dependencias incompleta en `Boleteria`.** Crea sus repositorios con `new`. Para tests
   con repositorio en memoria habría que pasarlos por constructor o por un método de configuración.
 - **`PanelInicio` lee `Boleteria` directo** para las estadísticas de la portada. Es solo lectura, pero
@@ -604,7 +603,7 @@ La última diapositiva de la clase 14 lista lo que tiene que tener el TPO termin
 | 12 clases o más | ✔ 33 clases y 5 enums en el modelo, más las de la vista | `modelo/`, `vista/` |
 | 3 patrones o buenas prácticas | ✔ Singleton, Strategy, Factory, Repository, MVC, GRASP | [sección 4](#4-los-patrones-uno-por-uno) |
 | 1 excepción propia y 3 try-catch | ✔ 4 propias; try/catch en 12 lugares | [sección 7](#7-excepciones-cuáles-por-qué-y-dónde-se-atrapan) |
-| 6 interfaces Swing (4 ABM + 2 de negocio) | 4 ABM de sedes + Venta de entradas (negocio) + Inicio (portada). **Falta Devoluciones**; la lógica ya está en `Boleteria.devolverEntrada`. | `vista/` |
+| 6 interfaces Swing (4 ABM + 2 de negocio) | ✔ 4 ABM de sedes + Venta de entradas y Devoluciones (negocio) + Inicio (portada) | `vista/` |
 | 3 diálogos | ✔ confirmación de baja, error de arranque, comprobante | [sección 12](#12-la-interfaz-swing-decisiones) |
 | Menú principal que navega entre ventanas | ✔ `JMenuBar` (Inicio / Sedes / Ventas / Ayuda, con atajos) + `CardLayout` | `VentanaPrincipal` |
 | Datos en archivos o BD | ✔ `datos/*.txt`. Falta persistir eventos, funciones y compras. | [sección 9](#9-persistencia-en-archivos) |
@@ -643,8 +642,9 @@ Decisión de negocio: la promo (banco, club de fans) es sobre las entradas. Est�
 `Promocion.calcularDescuento`, que usa `calcularSubtotalEntradas()`. Cambiarlo es una línea.
 
 **¿Por qué el reintegro no incluye los cargos?**
-Porque el cargo por servicio paga la operación, que ya se hizo. Está en `Devolucion.calcularReintegro()`
-y se avisa en la factura.
+Porque el cargo por servicio paga la operación, que ya se hizo. `Devolucion.calcularReintegro()` devuelve
+`Entrada.getValorPagado()`: el precio de la entrada menos la parte del descuento de la promoción que le
+tocó (se reparte entre las entradas al pagar, en `Compra.pagar`). Se avisa en la factura.
 
 **¿Dónde está el polimorfismo?**
 `Sector.calcularMultiplicador` / `getCapacidad` (numerado vs general), `ReglaDeVenta.validar` (cada regla
@@ -698,8 +698,8 @@ acoplamiento entre el modelo y la persistencia.
 abre también con `invokeLater` para que aparezca después de que la pantalla se actualizó.
 
 **¿Qué cambiarían si tuvieran más tiempo?**
-Tests JUnit del modelo, persistir compras y la secuencia de facturas, inyectar los repositorios en
-`Boleteria`, y la pantalla de devoluciones.
+Tests JUnit del modelo, persistir compras y la secuencia de facturas, e inyectar los repositorios en
+`Boleteria`.
 
 ---
 

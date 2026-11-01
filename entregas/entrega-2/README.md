@@ -18,7 +18,7 @@ promoción, pago y factura) ya funciona.
 
 ## Qué falta para la entrega final
 
-- [ ] Pantalla de **Devoluciones** (la lógica ya está en `Boleteria.devolverEntrada`)
+- [x] Pantalla de **Devoluciones** (`PanelDevolucion`: verificar la entrada por código y devolverla)
 - [ ] Guardar eventos y funciones en archivos (hoy se crean en memoria en `DatosIniciales`)
 - [x] Al menos 3 *dialogs*: confirmación de baja (`showConfirmDialog`), error de arranque (`showMessageDialog`) y el comprobante (`FacturaDialog`, un `JDialog` modal)
 - [ ] Documentación de ≈10 páginas: propuesta, diagrama, estructura del código y capturas

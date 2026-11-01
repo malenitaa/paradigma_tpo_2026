@@ -39,18 +39,15 @@ public class Entrada {
         return funcion.calcularPrecio(sector);
     }
 
-    public void pagar() {
+    /** Se paga por lo que vale menos la parte de la promoción que le toca; es lo que se devuelve. */
+    public void pagar(double valorPagado) {
         estado = EstadoEntrada.PAGADA;
-    }
-
-    public void setvalorPagado(double valorPagado) {
         this.valorPagado = valorPagado;
     }
 
-    public double getvalorPagado() {
-        return this.valorPagado;
+    public double getValorPagado() {
+        return valorPagado;
     }
-
 
     /** La entrada deja de ocupar lugar (la reserva venció o se canceló). */
     public void anular() {

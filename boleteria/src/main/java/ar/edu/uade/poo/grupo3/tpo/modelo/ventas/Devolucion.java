@@ -2,7 +2,7 @@ package ar.edu.uade.poo.grupo3.tpo.modelo.ventas;
 
 import java.time.LocalDateTime;
 
-/** Devolución de una entrada: se reintegra el precio de la entrada, sin los cargos. */
+/** Devolución de una entrada: se reintegra lo que se pagó por ella (con su descuento), sin los cargos. */
 public class Devolucion {
 
     public static final int HORAS_LIMITE = 48;
@@ -23,7 +23,7 @@ public class Devolucion {
     }
 
     public final double calcularReintegro() {
-        return entrada.getPrecio();
+        return entrada.getValorPagado();
     }
 
     public Entrada getEntrada() {

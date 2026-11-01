@@ -22,17 +22,20 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -84,9 +87,6 @@ public class PanelVenta extends JPanel implements Pantalla {
     public PanelVenta(VentaController controlador) {
         super(new BorderLayout());
         this.controlador = controlador;
-        prepararSelector(funciones);
-        prepararSelector(sectores);
-        prepararSelector(clientes);
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Estilo.encabezado("Venta de entradas",
                 "Elegí la función y el sector, marcá tus asientos y reservalos: tenés 5 minutos para pagar."),
@@ -126,34 +126,6 @@ public class PanelVenta extends JPanel implements Pantalla {
         campo.add(new JLabel(etiqueta), BorderLayout.NORTH);
         campo.add(componente, BorderLayout.CENTER);
         return campo;
-    }
-
-    private static <T> void prepararSelector(JComboBox<T> selector) {
-        selector.setRenderer(new ListCellRenderer<T>() {
-            private final JTextArea texto = new JTextArea();
-
-            @Override
-            public Component getListCellRendererComponent(JList<? extends T> lista, T valor, int indice,
-                                                          boolean seleccionado, boolean tieneFoco) {
-                texto.setText(valor == null ? "" : valor.toString());
-                texto.setFont(lista.getFont());
-                texto.setLineWrap(true);
-                texto.setWrapStyleWord(true);
-                texto.setOpaque(true);
-                texto.setBackground(seleccionado ? lista.getSelectionBackground() : lista.getBackground());
-                texto.setForeground(seleccionado ? lista.getSelectionForeground() : lista.getForeground());
-                texto.setBorder(BorderFactory.createEmptyBorder(5, 6, 5, 6));
-
-                int ancho = lista.getWidth() > 0 ? lista.getWidth() - 8 : 280;
-                texto.setSize(Math.max(ancho, 1), Integer.MAX_VALUE);
-                return texto;
-            }
-        });
-        selector.addItemListener(event -> {
-            if (event.getStateChange() == java.awt.event.ItemEvent.SELECTED && event.getItem() != null) {
-                selector.setToolTipText(event.getItem().toString());
-            }
-        });
     }
 
     private JComponent columnaMapa() {

@@ -2,6 +2,8 @@ package ar.edu.uade.poo.grupo3.tpo.vista;
 
 import ar.edu.uade.poo.grupo3.tpo.controlador.VentaController;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
+import ar.edu.uade.poo.grupo3.tpo.modelo.enums.EstadoEntrada;
+import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Devolucion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 
 import javax.swing.BorderFactory;
@@ -22,13 +24,13 @@ import java.util.Optional;
 public class PanelDevolucion extends JPanel implements Pantalla {
 
     private final VentaController controlador;
-    private final JLabel detalle = Estilo.subtitulo("Detalle del reembolso.");
-    private final JLabel precioUnitario = Estilo.subtitulo(" ");
+    private final JLabel detalle = Estilo.subtitulo("Verificá una entrada para ver el reembolso.");
+    private final JLabel ubicacion = Estilo.subtitulo(" ");
     private final JTextField codigoEntrada = new JTextField(10);
     private final JTextArea motivoDevolucion = new JTextArea(4, 20);
     private final JLabel reembolso = new JLabel("—");
-    private final JButton pagar = new JButton("Efectuar Devolución");
-    private final JButton verificarEntrada = new JButton("Verificar Entrada");
+    private final JButton devolver = new JButton("Efectuar devolución");
+    private final JButton verificarEntrada = new JButton("Verificar entrada");
     private final Aviso aviso = new Aviso();
 
     public PanelDevolucion(VentaController controlador) {
@@ -46,13 +48,10 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         add(centro, BorderLayout.CENTER);
         add(Estilo.barraInferior(aviso), BorderLayout.SOUTH);
 
-        verificarEntrada.addActionListener(e -> {
-            verificarEntrada();
-        });
-
-        pagar.addActionListener(e -> {
-            efectuarDevolucion();
-        });
+        verificarEntrada.addActionListener(e -> verificarEntrada());
+        codigoEntrada.addActionListener(e -> verificarEntrada());
+        devolver.addActionListener(e -> efectuarDevolucion());
+        devolver.setEnabled(false);
     }
 
     // ------------------------------------------------------------------ armado de la pantalla
@@ -93,18 +92,15 @@ public class PanelDevolucion extends JPanel implements Pantalla {
         return Estilo.columna(
                 Estilo.seccion("Tu devolución"),
                 detalle,
-                precioUnitario,
-                fila("Monto a reembolsar:", reembolso),
-                pagar);
+                ubicacion,
+                fila("Monto a reembolsar", reembolso),
+                devolver);
     }
 
     private static JPanel fila(String texto, JLabel valor) {
         JPanel fila = new JPanel(new BorderLayout());
-        fila.setOpaque(false);
         fila.add(Estilo.subtitulo(texto), BorderLayout.WEST);
         fila.add(valor, BorderLayout.EAST);
-        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        fila.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
         return fila;
     }
 
@@ -113,35 +109,52 @@ public class PanelDevolucion extends JPanel implements Pantalla {
 
     @Override
     public void alMostrar() {
+        codigoEntrada.setText("");
+        motivoDevolucion.setText("");
+        limpiarResumen();
+        aviso.ocultar();
+        codigoEntrada.requestFocusInWindow();
+    }
+
+    private void limpiarResumen() {
+        detalle.setText("Verificá una entrada para ver el reembolso.");
+        ubicacion.setText(" ");
+        reembolso.setText("—");
+        devolver.setEnabled(false);
+    }
+
+    /** Busca la entrada y muestra qué se devolvería. Solo habilita el botón si la devolución es posible. */
+    private void verificarEntrada() {
+        limpiarResumen();
+        Optional<Entrada> buscada = controlador.buscarEntrada(codigoEntrada.getText());
+        if (buscada.isEmpty()) {
+            aviso.error("No existe ninguna entrada pagada con el código " + codigoEntrada.getText().trim() + ".");
+            return;
+        }
+        Entrada entrada = buscada.get();
+        detalle.setText(entrada.getCodigo() + " · " + entrada.getFuncion().getEvento().getNombre());
+        ubicacion.setText(entrada.getUbicacion());
+        reembolso.setText(Estilo.pesos(entrada.getValorPagado()));
+        if (entrada.getEstado() == EstadoEntrada.DEVUELTA) {
+            aviso.error("La entrada " + entrada.getCodigo() + " ya fue devuelta.");
+        } else if (!controlador.puedeDevolverse(entrada)) {
+            aviso.error("La entrada " + entrada.getCodigo() + " no se puede devolver: faltan menos de "
+                    + Devolucion.HORAS_LIMITE + " hs para la función.");
+        } else {
+            aviso.info("Entrada válida. Se reintegra lo pagado por la entrada, sin el cargo por servicio.");
+            devolver.setEnabled(true);
+        }
     }
 
     private void efectuarDevolucion() {
-        Optional<Boolean> entradaValida = verificarEntrada();
-        if (!entradaValida.orElse(false)) {
-            return;
-        }
         try {
-            controlador.devolverEntrada(codigoEntrada.getText(), motivoDevolucion.getText());
-            aviso.exito("Devolución efectuada: el reembolso se procesará según el medio de pago.");
+            Devolucion devolucion = controlador.devolverEntrada(codigoEntrada.getText(), motivoDevolucion.getText());
+            alMostrar();
+            aviso.exito("Devolución registrada: se reintegran " + Estilo.pesos(devolucion.getMontoReintegro())
+                    + " por la entrada " + devolucion.getEntrada().getCodigo() + ". El asiento vuelve a la venta.");
         } catch (DevolucionNoPermitidaException ex) {
             aviso.error(ex.getMessage());
-        }
-    }
-
-    private Optional<Boolean> verificarEntrada() {
-        try {
-            Optional<Entrada> entrada = controlador.buscarEntrada(codigoEntrada.getText());
-            if (entrada.isPresent()) {
-                aviso.exito("Entrada válida.");
-                reembolso.setText(Estilo.pesos(entrada.get().getvalorPagado()));
-                return Optional.of(true);
-            } else {
-                aviso.error("Entrada no encontrada.");
-                return Optional.empty();
-            }
-        } catch (Exception ex) {
-            aviso.error(ex.getMessage());
-            return Optional.empty();
+            devolver.setEnabled(false);
         }
     }
 }

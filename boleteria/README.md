@@ -22,6 +22,7 @@ Requiere **Java 17 o superior**.
 5. Elegí el medio de pago y **Pagar**: se muestra el comprobante y se guarda en `datos/facturas/`.
 6. Para ver qué pasa si no pagás a tiempo: botón *Demo: adelantar el reloj 5 minutos*.
 7. Para ver una regla de venta: elegí asientos salteados (por ejemplo E-1 y E-3) y reservá.
+ 8. Para devolver una entrada: **Ventas → Devoluciones** (Ctrl+D), el código que figura en el comprobante (por ejemplo `E0001-01`) → **Verificar entrada** → **Efectuar devolución**.
 
 Cuentas de prueba: `ana@mail.com`, `bruno@mail.com`, `carla@mail.com` · contraseña `boleteria123`.
 Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN10` (10 %).
@@ -77,7 +78,7 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | `facturas/FAC-*.txt` | un comprobante por compra confirmada |
 
 Si la carpeta `datos/` no existe, se crea con datos de ejemplo. Los eventos y funciones todavía se cargan en memoria
-(`DatosIniciales`); su persistencia y la pantalla de devoluciones quedan para la entrega final.
+(`DatosIniciales`); su persistencia queda para la entrega final.
 
 ## Estructura del código
 
