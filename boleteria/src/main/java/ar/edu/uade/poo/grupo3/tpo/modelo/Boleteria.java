@@ -5,7 +5,6 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.enums.EstadoFuncion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.MedioPago;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Evento;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
-import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.AutenticacionException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.ReservaVencidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.SeleccionInvalidaException;
@@ -15,19 +14,15 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorGeneral;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.SectorNumerado;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.ClienteRepositorioArchivo;
-import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.FacturaArchivo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.Repositorio;
 import ar.edu.uade.poo.grupo3.tpo.modelo.persistencia.SedeRepositorioArchivo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.promociones.Promocion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.reglas.ReglaDeVenta;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cargo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cliente;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Compra;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cuenta;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Devolucion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Pago;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 
 import java.io.IOException;
@@ -52,7 +47,6 @@ public final class Boleteria {
     private final Path directorioDatos;
     private final Repositorio<Sede> repoSedes;
     private final Repositorio<Cliente> repoClientes;
-    private final FacturaArchivo archivoFacturas;
 
     private final List<Sede> sedes = new ArrayList<>();
     private final List<Evento> eventos = new ArrayList<>();
@@ -61,7 +55,6 @@ public final class Boleteria {
     private final List<Factura> facturas = new ArrayList<>();
     private final List<Devolucion> devoluciones = new ArrayList<>();
     private final List<ReglaDeVenta> reglas = new ArrayList<>();
-    private final List<Cargo> cargosVigentes = new ArrayList<>();
     private final List<Promocion> promociones = new ArrayList<>();
     private final List<PaqueteVIP> paquetes = new ArrayList<>();
 
@@ -69,7 +62,6 @@ public final class Boleteria {
         this.directorioDatos = directorioDatos;
         this.repoSedes = new SedeRepositorioArchivo(directorioDatos);
         this.repoClientes = new ClienteRepositorioArchivo(directorioDatos);
-        this.archivoFacturas = new FacturaArchivo(directorioDatos);
     }
 
     public static synchronized Boleteria getInstancia() {
@@ -168,24 +160,20 @@ public final class Boleteria {
     // ------------------------------------------------------------------ cuentas
 
     public Cliente registrarCuenta(String dni, String nombre, String email, String contrasenia) {
-        Cuenta cuenta = new Cuenta(email, contrasenia);
-        if (buscarClientePorEmail(cuenta.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Ya hay una cuenta con el email " + cuenta.getEmail());
+        Cliente cliente = new Cliente(dni, nombre, email, contrasenia);
+        if (buscarClientePorEmail(cliente.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Ya hay una cuenta con el email " + cliente.getEmail());
         }
-        if (clientes.stream().anyMatch(c -> c.getDni().equals(dni.trim()))) {
-            throw new IllegalArgumentException("Ya hay una cuenta con el DNI " + dni);
+        if (clientes.stream().anyMatch(c -> c.getDni().equals(cliente.getDni()))) {
+            throw new IllegalArgumentException("Ya hay una cuenta con el DNI " + cliente.getDni());
         }
-        Cliente cliente = new Cliente(dni, nombre, cuenta);
         clientes.add(cliente);
         return cliente;
     }
 
-    public Cliente iniciarSesion(String email, String contrasenia) throws AutenticacionException {
-        Optional<Cliente> cliente = buscarClientePorEmail(email);
-        if (cliente.isEmpty() || !cliente.get().getCuenta().verificarContrasenia(contrasenia)) {
-            throw new AutenticacionException("Email o contraseña incorrectos");
-        }
-        return cliente.get();
+    /** Devuelve el cliente si el email y la contraseña coinciden; vacío si no. */
+    public Optional<Cliente> iniciarSesion(String email, String contrasenia) {
+        return buscarClientePorEmail(email).filter(c -> c.verificarContrasenia(contrasenia));
     }
 
     public Optional<Cliente> buscarClientePorEmail(String email) {
@@ -211,10 +199,6 @@ public final class Boleteria {
 
     public void agregarRegla(ReglaDeVenta regla) {
         reglas.add(regla);
-    }
-
-    public void agregarCargo(Cargo cargo) {
-        cargosVigentes.add(cargo);
     }
 
     public void agregarPromocion(Promocion promocion) {
@@ -247,7 +231,6 @@ public final class Boleteria {
 
     public Compra iniciarCompra(Cliente cliente, String codigoPreventa, LocalDateTime ahora) {
         Compra compra = new Compra(cliente, codigoPreventa, ahora);
-        cargosVigentes.forEach(compra::aplicarCargo);
         compras.add(compra);
         return compra;
     }
@@ -312,12 +295,11 @@ public final class Boleteria {
     public Factura confirmarCompra(Compra compra, MedioPago medio, LocalDateTime ahora)
             throws ReservaVencidaException {
         String operacion = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        Pago pago = new Pago(operacion, medio, compra.calcularTotal(), ahora);
-        compra.confirmar(pago, ahora);
+        compra.confirmar(medio, operacion, ahora);
         Factura factura = new Factura(compra, ahora);
         facturas.add(factura);
         try {
-            archivoFacturas.guardar(factura);
+            factura.guardar(directorioDatos.resolve("facturas"));
         } catch (IOException e) {
             // La venta ya está hecha: si falla el archivo no se pierde la compra, solo se avisa.
             System.err.println("No se pudo guardar la factura " + factura.getNumero() + ": " + e.getMessage());

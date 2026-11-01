@@ -14,7 +14,6 @@ participant "f: Funcion" as F
 participant "r: ReglaDeVenta" as R
 participant "c: Compra" as C
 participant "e: Entrada" as E
-participant "p: Pago" as P
 participant "cli: Cliente" as Cli
 
 == 1. Buscar función y ver disponibilidad ==
@@ -70,12 +69,10 @@ alt pasaron más de 5 minutos (c.estaVencida(ahora))
   Boleteria --> UI : throw ReservaVencidaException
   UI --> Op : diálogo "La reserva venció, volvé a elegir los asientos"
 else reserva vigente
-  create P
-  Boleteria -> P : new Pago(nroOperacion, medio, total)
-  Boleteria -> C : confirmar(p)
-  C -> E : pagar()\nestado = PAGADA
+  Boleteria -> C : confirmar(medio, nroOperacion, ahora)
+  C -> E : pagar(valorPagado)\nestado = PAGADA
   Boleteria -> Cli : agregarCompra(c)
-  Boleteria --> UI : p
+  Boleteria --> UI : factura
   UI --> Op : diálogo de confirmación con los códigos de entrada
 end
 @enduml

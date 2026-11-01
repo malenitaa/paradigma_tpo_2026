@@ -3,7 +3,6 @@ package ar.edu.uade.poo.grupo3.tpo;
 import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
 import ar.edu.uade.poo.grupo3.tpo.modelo.enums.MedioPago;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
-import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.AutenticacionException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.DevolucionNoPermitidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.ReservaVencidaException;
 import ar.edu.uade.poo.grupo3.tpo.modelo.excepcion.SeleccionInvalidaException;
@@ -39,12 +38,10 @@ public class DemoFlujoCompra {
         } catch (IllegalArgumentException e) {
             System.out.println("✗ Registro rechazado: " + e.getMessage());
         }
-        try {
-            boleteria.iniciarSesion("diego@mail.com", "equivocada");
-        } catch (AutenticacionException e) {
-            System.out.println("✗ Login rechazado: " + e.getMessage());
+        if (boleteria.iniciarSesion("diego@mail.com", "equivocada").isEmpty()) {
+            System.out.println("✗ Login rechazado: email o contraseña incorrectos");
         }
-        Cliente cliente = boleteria.iniciarSesion("diego@mail.com", "clave123");
+        Cliente cliente = boleteria.iniciarSesion("diego@mail.com", "clave123").orElseThrow();
         System.out.println("✓ Sesión iniciada: " + cliente.getNombre());
 
         titulo("2. Búsqueda de funciones y disponibilidad");

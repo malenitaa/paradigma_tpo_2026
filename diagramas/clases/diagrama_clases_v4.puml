@@ -5,8 +5,11 @@
 ' Cambios v3: se quitan Estacionamiento, ExperienciaInmersiva, PrecioDinamico, PoliticaPrecio,
 '             Adicional y TipoCargo. Se agregan reserva de 5 minutos, Pago, Devolucion,
 '             EstadoCompra, MedioPago y dos excepciones nuevas.
-' Cambios v4: Cuenta (registro e inicio de sesión), Factura, Promocion por código, SectorFactory,
-'             TipoSector, AutenticacionException y paquete de persistencia (Repository).
+' Cambios v4: registro e inicio de sesión, Factura, Promocion por código, fábrica de sectores,
+'             TipoSector y paquete de persistencia (Repository).
+' Entrega 2: se quitan Recital, Artista, Cuenta, Pago, Cargo, SectorFactory, FacturaArchivo y
+'            AutenticacionException (33 -> 25 clases). Su lógica pasa a Evento, Cliente, Compra,
+'            Sector.crear y Factura.guardar.
 
 skinparam classAttributeIconSize 0
 skinparam shadowing false
@@ -35,9 +38,6 @@ package "Infraestructura" {
     +calcularMultiplicador(): double
     +{abstract} getCapacidad(): int
     +{abstract} getTipo(): TipoSector
-  }
-
-  class SectorFactory <<factory>> {
     +{static} crear(TipoSector t, String codigo, String nombre, int piso, double distancia, int filas, int asientosPorFila, int capacidad): Sector
     +{static} crearNumerado(String codigo, String nombre, int piso, double distancia, int filas, int asientosPorFila): SectorNumerado
   }
@@ -72,30 +72,18 @@ package "Infraestructura" {
 
 ' ================== EVENTOS ==================
 package "Eventos" {
-  abstract class Evento {
-    #id: int
-    #nombre: String
-    #descripcion: String
-    #duracionMinutos: int
-    #funciones: List<Funcion>
-    «constructor»+Evento(int id, String nombre, String descripcion, int duracionMinutos)
+  class Evento {
+    -id: int
+    -nombre: String
+    -descripcion: String
+    -duracionMinutos: int
+    -genero: String
+    -artistas: List<String>
+    -funciones: List<Funcion>
+    «constructor»+Evento(int id, String nombre, String descripcion, int duracionMinutos, String genero)
+    +agregarArtista(String nombre): void
     +agregarFuncion(Funcion f): void
     +getFuncionesDisponibles(): List<Funcion>
-    +{abstract} getTipo(): String
-  }
-
-  class Recital {
-    -genero: String
-    -artistas: List<Artista>
-    «constructor»+Recital(int id, String nombre, String descripcion, int duracionMinutos, String genero)
-    +agregarArtista(Artista a): void
-    +getTipo(): String
-  }
-
-  class Artista {
-    -nombre: String
-    -nacionalidad: String
-    «constructor»+Artista(String nombre, String nacionalidad)
   }
 
   class Funcion {
@@ -136,18 +124,14 @@ package "Ventas" {
   class Cliente {
     -dni: String
     -nombre: String
-    -compras: List<Compra>
-    «constructor»+Cliente(String dni, String nombre, Cuenta cuenta)
-    +agregarCompra(Compra c): void
-    +getEmail(): String
-  }
-
-  class Cuenta {
     -email: String
     -hashContrasenia: String
-    «constructor»+Cuenta(String email, String contrasenia)
+    -compras: List<Compra>
+    «constructor»+Cliente(String dni, String nombre, String email, String contrasenia)
+    +{static} desdeArchivo(String dni, String nombre, String email, String hash): Cliente
     +verificarContrasenia(String contrasenia): boolean
     +cambiarContrasenia(String contrasenia): void
+    +agregarCompra(Compra c): void
   }
 
   class Promocion {
@@ -165,11 +149,13 @@ package "Ventas" {
     -fecha: LocalDateTime
     «constructor»+Factura(Compra c, LocalDateTime fecha)
     +generarTexto(): String
+    +guardar(Path carpeta): Path
     +getTotal(): double
   }
 
   class Compra {
     +{static} MINUTOS_RESERVA: int = 5
+    +{static} CARGO_SERVICIO: double = 12
     -nroCompra: int
     -fechaCreacion: LocalDateTime
     -vencimientoReserva: LocalDateTime
@@ -177,20 +163,19 @@ package "Ventas" {
     -codigoPreventa: String
     -entradas: List<Entrada>
     -paquetes: List<PaqueteVIP>
-    -cargos: List<Cargo>
     -promocion: Promocion
-    -pago: Pago
+    -medioPago: MedioPago
+    -nroOperacion: String
     «constructor»+Compra(Cliente cliente, String codigoPreventa, LocalDateTime ahora)
     +agregarEntrada(Funcion f, Sector s, Asiento a): Entrada
     +agregarPaquete(PaqueteVIP p): void
-    +aplicarCargo(Cargo c): void
     +aplicarPromocion(Promocion p): void
     +calcularSubtotal(): double
     +calcularDescuento(): double
     +calcularCargos(): double
     +calcularTotal(): double
     +estaVencida(LocalDateTime ahora): boolean
-    +confirmar(Pago p, LocalDateTime ahora): void
+    +confirmar(MedioPago medio, String nroOperacion, LocalDateTime ahora): void
     +vencer(): void
     +cancelar(): void
   }
@@ -198,21 +183,16 @@ package "Ventas" {
   class Entrada {
     -codigo: String
     -precio: double
+    -valorPagado: double
     -estado: EstadoEntrada
     «constructor»+Entrada(String codigo, Funcion f, Sector s, Asiento a)
     +calcularPrecio(): double
-    +pagar(): void
+    +pagar(double valorPagado): void
     +anular(): void
     +puedeDevolverse(LocalDateTime ahora): boolean
     +devolver(): void
   }
 
-  class Cargo {
-    -nombre: String
-    -porcentaje: double
-    «constructor»+Cargo(String nombre, double porcentaje)
-    +aplicar(double monto): double
-  }
 
   class PaqueteVIP {
     -nombre: String
@@ -224,13 +204,6 @@ package "Ventas" {
     +hayCupo(): boolean
   }
 
-  class Pago {
-    -nroOperacion: String
-    -medio: MedioPago
-    -monto: double
-    -fecha: LocalDateTime
-    «constructor»+Pago(String nroOperacion, MedioPago medio, double monto)
-  }
 
   class Devolucion {
     +{static} HORAS_LIMITE: int = 48
@@ -271,10 +244,9 @@ package "Ventas" {
     -facturas: List<Factura>
     -promociones: List<Promocion>
     -reglas: List<ReglaDeVenta>
-    -cargosVigentes: List<Cargo>
     +{static} getInstancia(): Boleteria
     +registrarCuenta(String dni, String nombre, String email, String contrasenia): Cliente
-    +iniciarSesion(String email, String contrasenia): Cliente
+    +iniciarSesion(String email, String contrasenia): Optional<Cliente>
     +agregarSede(Sede s): void
     +modificarSede(Sede s, String nombre, String direccion): void
     +eliminarSede(Sede s): void
@@ -316,10 +288,6 @@ package "Reglas" {
   class DevolucionNoPermitidaException <<exception>> {
     «constructor»+DevolucionNoPermitidaException(String mensaje)
   }
-
-  class AutenticacionException <<exception>> {
-    «constructor»+AutenticacionException(String mensaje)
-  }
 }
 
 ' ================== PERSISTENCIA ==================
@@ -330,16 +298,12 @@ package "Persistencia" {
   }
   class SedeRepositorioArchivo
   class ClienteRepositorioArchivo
-  class FacturaArchivo {
-    +guardar(Factura f): Path
-  }
 }
 
 ' ================== RELACIONES ==================
 ' Herencia / realización
 Sector <|-- SectorNumerado
 Sector <|-- SectorGeneral
-Evento <|-- Recital
 ReglaDeVenta <|.. NoDejarAsientoSuelto
 ReglaDeVenta <|.. RequiereCodigoPreventa
 
@@ -349,12 +313,9 @@ SectorNumerado "1" *-- "1..*" Asiento : tiene
 Evento "1" *-- "1..*" Funcion : se programa en
 Funcion "1" *-- "0..1" Preventa : tiene
 Compra "1" *-- "1..*" Entrada : incluye
-Compra "1" *-- "0..1" Pago : se paga con
 
 ' Agregación
-Recital "*" o-- "1..*" Artista : participa
 Compra "*" o-- "*" PaqueteVIP : suma
-Compra "*" o-- "*" Cargo : aplica
 
 ' Asociaciones
 Funcion "*" --> "1" Sede : se realiza en
@@ -366,7 +327,7 @@ Cliente "1" -- "*" Compra : realiza
 Funcion --> EstadoFuncion
 Compra --> EstadoCompra
 Entrada --> EstadoEntrada
-Pago --> MedioPago
+Compra --> MedioPago
 
 Boleteria --> "*" Sede
 Boleteria --> "*" Evento
@@ -374,25 +335,21 @@ Boleteria --> "*" Cliente
 Boleteria --> "*" Compra
 Boleteria --> "*" Devolucion
 Boleteria --> "*" ReglaDeVenta : valida con
-Boleteria --> "*" Cargo
 
 Repositorio <|.. SedeRepositorioArchivo
 Repositorio <|.. ClienteRepositorioArchivo
-Cliente "1" *-- "1" Cuenta : tiene
 Compra "*" --> "0..1" Promocion : aplica
 Factura "0..1" --> "1" Compra : factura
 Sector --> TipoSector
-SectorFactory ..> Sector : crea
+SedeRepositorioArchivo ..> Sector : crea con Sector.crear
 Boleteria --> "*" Factura
 Boleteria --> "*" Promocion
 Boleteria --> SedeRepositorioArchivo
 Boleteria --> ClienteRepositorioArchivo
-Boleteria --> FacturaArchivo
 
 ' Dependencias (excepciones)
 ReglaDeVenta ..> SeleccionInvalidaException : lanza
 Compra ..> ReservaVencidaException : lanza
 Boleteria ..> DevolucionNoPermitidaException : lanza
-Boleteria ..> AutenticacionException : lanza
 
 @enduml
