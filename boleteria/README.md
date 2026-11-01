@@ -89,10 +89,15 @@ Códigos de ejemplo: preventa `ORBITA26` · promociones `BANCO20` (20 %) y `FAN1
 | `sedes.txt` | `nombre|direccion` |
 | `sectores.txt` | `sede|NUM|codigo|nombre|piso|distancia|filasXasientos` o `sede|GEN|codigo|nombre|piso|distancia|capacidad` |
 | `clientes.txt` | `dni|nombre|email|hashContraseña` (SHA-256, nunca la contraseña) |
+| `eventos.txt` | `id|nombre|descripcion|duracionMin|genero|artistas` (separados por coma) |
+| `funciones.txt` | `idEvento|idFuncion|sede|fechaHora|precioBase|estado|prevCodigo|prevInicio|prevFin` |
+| `factura_seq.txt` | el número de la próxima factura |
 | `facturas/FAC-*.txt` | un comprobante por compra confirmada |
 
-Si la carpeta `datos/` no existe, se crea con datos de ejemplo. Los eventos y funciones todavía se cargan en memoria
-(`DatosIniciales`); su persistencia queda para la entrega final.
+Si la carpeta `datos/` no existe, se crea con datos de ejemplo. `eventos.txt`, `funciones.txt` y `factura_seq.txt` no están
+en git: se generan la primera vez que arranca la app, con las funciones de ejemplo a 1, 15 y 30 días de ese día y la
+preventa vigente por 3 días. **Si esas fechas quedaron en el pasado (por ejemplo, antes de una demo), borrá los dos
+archivos de eventos y volvé a abrir la app: se crean de nuevo.**
 
 ## Estructura del código
 
@@ -100,8 +105,8 @@ Los paquetes siguen las tres capas de MVC (ver [`diagramas/arquitectura/mvc.svg`
 
 ```
 ar.edu.uade.poo.grupo3.tpo
-├── vista/               Pantallas Swing: BoleteriaApp, VentanaPrincipal, Panel* (ABM de sedes), PanelVenta,
-│                        FacturaDialog, FormularioSector, Estilo, Aviso. Solo arman la pantalla y muestran mensajes.
+├── vista/               Pantallas Swing: BoleteriaApp, VentanaPrincipal, Panel* (ABM de sedes), PanelVenta, PanelDevolucion,
+│                        PanelRegistroCliente, PanelLoginCliente, FacturaDialog, FormularioSector, Estilo, Aviso. Solo arman la pantalla y muestran mensajes.
 ├── controlador/         SedeController (ABM de sedes) y VentaController (compra en curso y reloj de la reserva).
 │                        Reciben lo que hace el usuario y se lo piden al modelo.
 ├── modelo/              Todo el dominio y su persistencia
@@ -113,7 +118,7 @@ ar.edu.uade.poo.grupo3.tpo
 │   ├── reglas/          ReglaDeVenta, NoDejarAsientoSuelto, RequiereCodigoPreventa
 │   ├── excepcion/       excepciones del negocio
 │   ├── enums/           EstadoFuncion, EstadoCompra, EstadoEntrada, MedioPago, TipoSector
-│   └── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo
+│   └── persistencia/    Repositorio<T>, SedeRepositorioArchivo, ClienteRepositorioArchivo, EventoRepositorioArchivo
 ├── DatosIniciales       configuración y datos de ejemplo
 └── DemoFlujoCompra      flujo de compra completo por consola
 ```
