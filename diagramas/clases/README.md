@@ -14,7 +14,7 @@ Regenerar (requiere Java; sin Graphviz usar layout Smetana):
 
 ```bash
 java -jar plantuml.jar -tpng -Playout=smetana diagramas/clases/diagrama_clases_entrega2.puml
-cp diagramas/clases/TPO_diagrama_clases_entrega2.png diagramas/clases/diagrama_clases_entrega2.png
+mv diagramas/clases/TPO_diagrama_clases_entrega2.png diagramas/clases/diagrama_clases_entrega2.png
 ```
 
 ## Cambios respecto al diagrama original grupo 3 (imagen TPO)
