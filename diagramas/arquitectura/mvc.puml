@@ -1,7 +1,7 @@
 @startuml TPO_arquitectura_mvc
 ' TPO Paradigma Orientado a Objetos - Grupo 3
 ' Cómo se reparte el código en las tres capas de MVC (paquete ar.edu.uade.poo.grupo3.tpo).
-' El detalle de cada clase del modelo está en diagramas/clases/diagrama_clases_v4.
+' El detalle de cada clase del modelo está en diagramas/clases/diagrama_clases_entrega2.puml.
 
 skinparam shadowing false
 skinparam packageStyle rectangle
@@ -19,6 +19,9 @@ package "vista  (Swing: arma la pantalla y muestra mensajes)" as vista {
   class PanelBajaSede
   class FormularioSector
   class PanelVenta
+  class PanelDevolucion
+  class PanelRegistroCliente
+  class PanelLoginCliente
   class FacturaDialog
   class Estilo
   class Aviso
@@ -89,6 +92,9 @@ PanelAltaSede --> SedeController
 PanelModificacionSede --> SedeController
 PanelBajaSede --> SedeController
 PanelVenta --> VentaController
+PanelDevolucion --> VentaController
+PanelRegistroCliente --> Boleteria
+PanelLoginCliente --> Boleteria
 PanelInicio ..> Boleteria : solo lee (estadísticas)
 
 ' Controlador -> Modelo

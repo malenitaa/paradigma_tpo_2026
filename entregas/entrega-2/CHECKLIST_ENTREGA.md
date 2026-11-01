@@ -79,7 +79,7 @@ Documentación extendida (~10 páginas): [`entregas/entrega-final/`](../../entre
 
 ---
 
-## Escenarios cubiertos por `DemoFlujoCompra` (última corrida OK)
+## Escenarios cubiertos por `DemoFlujoCompra` (última corrida OK — 01/11/2026 18:16 ART, exit 0)
 
 1. Registro, email duplicado, login fallido / exitoso  
 2. Búsqueda de funciones y disponibilidad  
@@ -88,3 +88,5 @@ Documentación extendida (~10 páginas): [`entregas/entrega-final/`](../../entre
 5. Reserva vencida a los 6 minutos  
 6. Preventa sin código / con `ORBITA26` + `BANCO20`  
 7. Devolución permitida y rechazada (&lt; 48 hs a la función)
+
+**Salida esperada:** la consola debe cerrar con la línea `Fin de la demo.` (BUILD SUCCESS).

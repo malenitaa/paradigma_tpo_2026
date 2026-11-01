@@ -1,4 +1,4 @@
-# Entrega parcial 2 — Estado final (01/11/2026)
+# Entrega parcial 2 — Estado final (01/11/2026, verificación 18:16 ART)
 
 ## Veredicto
 
@@ -68,9 +68,21 @@ Contraseña de clientes de ejemplo (seed): ver `DatosIniciales.CONTRASENIA_DEMO`
 
 ---
 
+## Verificación automática (01/11/2026 18:16 ART)
+
+| Prueba | Resultado |
+|---|---|
+| `mvn -B clean compile` (desde `boleteria/`) | OK · 51 fuentes |
+| `mvn -B exec:exec@demo-flujo-compra` | OK · exit 0 · termina en «Fin de la demo.» |
+| Persistencia `datos/*.txt` tras demo | OK · `sedes`, `sectores`, `clientes`, `eventos`, `funciones`, `factura_seq.txt` legibles |
+| Comprobante en disco | OK · p. ej. `datos/facturas/FAC-0001-00000010.txt` (demo §4) |
+| Diagrama vs código | OK · `diagrama_clases_entrega2.puml` incluye login/registro UI; PNG regenerado |
+
+---
+
 ## Cambios cerrados en esta revisión
 
 - `PanelLoginCliente` y menú **Clientes → Iniciar sesión**.
 - Sesión de cliente en `Boleteria`; `PanelVenta` usa el cliente logueado y bloquea reservar sin sesión.
 - Secuencia de facturas en `datos/factura_seq.txt` (fallback desde archivos `FAC-*.txt`).
-- Diagrama `.puml`: `EventoRepositorioArchivo` agregado.
+- Diagrama `.puml`: `EventoRepositorioArchivo` agregado; `PanelRegistroCliente` y `PanelLoginCliente` (PNG regenerado 01/11/2026 18:16).

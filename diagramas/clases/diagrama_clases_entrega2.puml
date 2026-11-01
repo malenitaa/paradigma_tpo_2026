@@ -33,6 +33,8 @@ package "Vista · Swing" <<Rectangle>> {
   class PanelBajaSede
   class PanelVenta
   class PanelDevolucion
+  class PanelRegistroCliente
+  class PanelLoginCliente
   class FormularioSector
   class FacturaDialog
 
@@ -43,6 +45,8 @@ package "Vista · Swing" <<Rectangle>> {
   Pantalla <|.. PanelBajaSede
   Pantalla <|.. PanelVenta
   Pantalla <|.. PanelDevolucion
+  Pantalla <|.. PanelRegistroCliente
+  Pantalla <|.. PanelLoginCliente
 }
 
 ' ================== CONTROLADOR (MVC) ==================
@@ -381,6 +385,8 @@ PanelAltaSede ..> FormularioSector
 PanelModificacionSede ..> FormularioSector
 
 PanelInicio --> Boleteria
+PanelRegistroCliente --> Boleteria
+PanelLoginCliente --> Boleteria
 PanelVenta --> VentaController
 PanelDevolucion --> VentaController
 PanelVenta ..> FacturaDialog
