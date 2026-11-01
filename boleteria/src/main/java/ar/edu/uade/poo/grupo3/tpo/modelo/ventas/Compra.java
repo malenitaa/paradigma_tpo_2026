@@ -131,15 +131,11 @@ public class Compra {
             throw new IllegalStateException("La compra no tiene entradas");
         }
         this.pago = pago;
-        entradas.forEach(Entrada::pagar);
-        double precioDescontado;
-
-        if (promocion != null && promocion.aplicaA(this)) {
-            precioDescontado = promocion.calcularDescuento(this);
-        } else {
-            precioDescontado = 0;
+        // El descuento de la promoción se reparte entre las entradas en proporción a su precio.
+        double proporcionDescuento = calcularDescuento() / calcularSubtotalEntradas();
+        for (Entrada entrada : getEntradasActivas()) {
+            entrada.pagar(entrada.getPrecio() * (1 - proporcionDescuento));
         }
-        entradas.forEach(entrada -> entrada.setvalorPagado(entrada.getPrecio()-precioDescontado));
         estado = EstadoCompra.CONFIRMADA;
         cliente.agregarCompra(this);
     }

@@ -152,25 +152,18 @@ public class VentaController {
     }
 
 
-    public Devolucion devolverEntrada(String codigoEntrada, String motivo) throws DevolucionNoPermitidaException {
-        try {
-            return boleteria.devolverEntrada(codigoEntrada, motivo, ahora());
-        } catch (DevolucionNoPermitidaException e) {
-            throw e;
-        } finally {
-            compra = null;
-        }
-    }
+    // ------------------------------------------------------------------ devoluciones
 
     public Optional<Entrada> buscarEntrada(String codigo) {
-        try{
         return boleteria.buscarEntrada(codigo);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al buscar entrada", e);
-        }
     }
 
+    public boolean puedeDevolverse(Entrada entrada) {
+        return entrada.puedeDevolverse(ahora());
+    }
 
-
-
+    /** La devolución es independiente de la venta en curso: no toca la compra que pueda estar abierta. */
+    public Devolucion devolverEntrada(String codigoEntrada, String motivo) throws DevolucionNoPermitidaException {
+        return boleteria.devolverEntrada(codigoEntrada, motivo, ahora());
+    }
 }

@@ -62,7 +62,7 @@ preventa `ORBITA26` · promociones `FAN10` (10 %) y `BANCO20` (20 %).
 | **Reglas de venta** | No se puede dejar un asiento suelto; durante la preventa se exige el código de acceso |
 | **Precio por ubicación** | Precio base de la función × multiplicador del sector según piso y cercanía al escenario |
 | **Cuentas** | Registro con email y contraseña (se guarda el hash, nunca la contraseña) e inicio de sesión |
-| **Devoluciones** | Hasta 48 hs antes de la función (o si se cancela), sin reintegro de cargos. Lógica lista; la pantalla queda para la entrega final |
+| **Devoluciones** | Hasta 48 hs antes de la función (o si se cancela): se verifica la entrada por su código y se reintegra lo pagado, sin los cargos |
 | **Persistencia** | Sedes, sectores y cuentas en `.txt`; cada factura en `datos/facturas/` |
 
 ## Entregas
@@ -71,7 +71,7 @@ preventa `ORBITA26` · promociones `FAN10` (10 %) y `BANCO20` (20 %).
 |---|---|---|---|
 | [Parcial 1](entregas/entrega-1/) | 11/10 | Propuesta de negocio + diagrama de clases preliminar | Entregada |
 | [Parcial 2](entregas/entrega-2/) | 01/11 | Código, patrones, excepciones, ABM Swing y persistencia | En revisión del grupo |
-| [Final](entregas/entrega-final/) | 18/11 | Las 6 pantallas (falta Devoluciones), dialogs y documentación (≈10 páginas) | Documentación en borrador |
+| [Final](entregas/entrega-final/) | 18/11 | Las 6 pantallas, dialogs y documentación (≈10 páginas) | Documentación en borrador |
 | Defensa | 04/12 | Exposición en tono de venta · guía: [DEFENSA.md](DEFENSA.md) | Pendiente |
 
 ## Cómo trabajamos
