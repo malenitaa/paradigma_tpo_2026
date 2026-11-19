@@ -235,11 +235,6 @@ public final class Boleteria {
 
     // ------------------------------------------------------------------ flujo de compra
 
-    public List<Asiento> consultarDisponibilidad(Funcion funcion, SectorNumerado sector, LocalDateTime ahora) {
-        liberarReservasVencidas(ahora);
-        return funcion.getAsientosLibres(sector);
-    }
-
     public Compra iniciarCompra(Cliente cliente, LocalDateTime ahora) {
         Compra compra = new Compra(cliente, ahora);
         compras.add(compra);

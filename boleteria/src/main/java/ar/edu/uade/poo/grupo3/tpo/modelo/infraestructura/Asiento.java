@@ -27,11 +27,6 @@ public class Asiento {
         return numero;
     }
 
-    /** Dos asientos son adyacentes si están en la misma fila y sus números difieren en uno. */
-    public boolean esAdyacente(Asiento otro) {
-        return otro != null && fila.equals(otro.fila) && Math.abs(numero - otro.numero) == 1;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
