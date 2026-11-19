@@ -67,16 +67,6 @@ public class Funcion {
         return lugaresLibres(sector) > 0;
     }
 
-    public List<Asiento> getAsientosLibres(SectorNumerado sector) {
-        List<Asiento> libres = new ArrayList<>();
-        for (Asiento a : sector.getAsientos()) {
-            if (estaDisponible(sector, a)) {
-                libres.add(a);
-            }
-        }
-        return libres;
-    }
-
     public int lugaresOcupados(Sector sector) {
         int ocupados = 0;
         for (Entrada e : entradas) {
