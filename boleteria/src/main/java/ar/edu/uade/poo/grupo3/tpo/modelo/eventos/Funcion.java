@@ -27,7 +27,6 @@ public class Funcion {
     private final double precioBase;
     private final Sede sede;
     private EstadoFuncion estado;
-    private Preventa preventa;
     private final List<Entrada> entradas;
 
     public Funcion(int id, Evento evento, LocalDateTime fechaHora, double precioBase, Sede sede) {
@@ -84,10 +83,6 @@ public class Funcion {
             return 0;
         }
         return lugaresOcupados(sector) * 100.0 / sector.getCapacidad();
-    }
-
-    public boolean estaEnPreventa(LocalDateTime ahora) {
-        return preventa != null && preventa.estaVigente(ahora);
     }
 
     public void registrarEntrada(Entrada entrada) {
@@ -147,14 +142,6 @@ public class Funcion {
         if (estado != null) {
             this.estado = estado;
         }
-    }
-
-    public Preventa getPreventa() {
-        return preventa;
-    }
-
-    public void setPreventa(Preventa preventa) {
-        this.preventa = preventa;
     }
 
     public List<Entrada> getEntradas() {

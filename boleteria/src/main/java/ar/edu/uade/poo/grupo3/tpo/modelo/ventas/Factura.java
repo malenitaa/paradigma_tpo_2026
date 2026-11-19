@@ -45,9 +45,6 @@ public class Factura {
         for (Entrada e : compra.getEntradasActivas()) {
             sb.append(String.format("%-9s %-30s %14s%n", e.getCodigo(), e.getUbicacion(), pesos(e.getPrecio())));
         }
-        for (PaqueteVIP p : compra.getPaquetes()) {
-            sb.append(String.format("%-40s %14s%n", "Paquete " + p.getNombre(), pesos(p.getPrecio())));
-        }
         sb.append(linea);
         sb.append(String.format("%-40s %14s%n", "Subtotal", pesos(compra.calcularSubtotal())));
         if (compra.calcularDescuento() > 0) {
@@ -93,16 +90,11 @@ public class Factura {
         return compra.calcularTotal();
     }
 
-    /** Restaura el próximo número a emitir (p. ej. desde datos/factura_seq.txt al iniciar). */
+    /** Restaura el próximo número a emitir (p. ej. según las facturas ya guardadas, al iniciar). */
     public static void establecerSecuencia(int proximoNumero) {
         if (proximoNumero < 1) {
             throw new IllegalArgumentException("La secuencia de facturas debe ser >= 1");
         }
         secuencia = proximoNumero;
-    }
-
-    /** Valor que usará la próxima factura emitida; conviene persistirlo tras cada venta. */
-    public static int proximaSecuencia() {
-        return secuencia;
     }
 }

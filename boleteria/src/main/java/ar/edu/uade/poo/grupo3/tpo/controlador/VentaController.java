@@ -14,7 +14,6 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.promociones.Promocion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Cliente;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Compra;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Factura;
-import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.PaqueteVIP;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Devolucion;
 import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 
@@ -49,19 +48,6 @@ public class VentaController {
         return boleteria.getClientes();
     }
 
-    public Optional<Cliente> clienteSesion() {
-        return boleteria.getClienteSesion();
-    }
-
-    /** El paquete VIP que se ofrece en la venta, o null si no hay ninguno cargado. */
-    public PaqueteVIP paqueteVip() {
-        return boleteria.getPaquetes().isEmpty() ? null : boleteria.getPaquetes().get(0);
-    }
-
-    public boolean estaEnPreventa(Funcion funcion) {
-        return funcion.estaEnPreventa(ahora());
-    }
-
     public void liberarReservasVencidas() {
         boleteria.liberarReservasVencidas(ahora());
     }
@@ -85,21 +71,17 @@ public class VentaController {
 
     /**
      * Inicia una compra y reserva los lugares: los asientos elegidos si el sector es numerado,
-     * o la cantidad pedida si es general. Si alguna regla de venta falla, la compra se cancela
+     * o la cantidad pedida si es general. Si la selección no es válida, la compra se cancela
      * y la excepción llega a la pantalla para mostrar el mensaje.
      */
-    public void reservar(Cliente cliente, String codigoPreventa, Funcion funcion, Sector sector,
-                         List<Asiento> seleccion, int cantidad, boolean conPaqueteVip)
+    public void reservar(Cliente cliente, Funcion funcion, Sector sector, List<Asiento> seleccion, int cantidad)
             throws SeleccionInvalidaException {
-        Compra nueva = boleteria.iniciarCompra(cliente, codigoPreventa, ahora());
+        Compra nueva = boleteria.iniciarCompra(cliente, ahora());
         try {
             if (sector instanceof SectorNumerado numerado) {
                 boleteria.reservarAsientos(nueva, funcion, numerado, seleccion, ahora());
             } else {
                 boleteria.reservarAsientos(nueva, funcion, (SectorGeneral) sector, cantidad, ahora());
-            }
-            if (conPaqueteVip && paqueteVip() != null) {
-                boleteria.agregarPaquete(nueva, paqueteVip());
             }
             compra = nueva;
         } catch (SeleccionInvalidaException | IllegalStateException ex) {
