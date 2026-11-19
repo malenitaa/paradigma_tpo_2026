@@ -54,10 +54,6 @@ public class SedeRepositorioArchivo implements Repositorio<Sede> {
 
     private void cargarSector(String linea, List<Sede> sedes) {
         String[] p = linea.split("\\|", -1);
-        if (p.length == 6) {
-            // formato viejo (sin nombre de sector): sede|tipo|codigo|piso|distancia|detalle
-            p = new String[]{p[0], p[1], p[2], p[2], p[3], p[4], p[5]};
-        }
         if (p.length < 7) {
             throw new IllegalArgumentException("faltan campos");
         }
