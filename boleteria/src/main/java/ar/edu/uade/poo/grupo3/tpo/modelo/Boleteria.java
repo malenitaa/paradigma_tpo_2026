@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -96,15 +95,21 @@ public final class Boleteria {
         return Collections.unmodifiableList(sedes);
     }
 
-    public Optional<Sede> buscarSede(String nombre) {
-        return sedes.stream().filter(s -> s.getNombre().equalsIgnoreCase(nombre.trim())).findFirst();
+    /** Devuelve null si no existe. */
+    public Sede buscarSede(String nombre) {
+        for (Sede s : sedes) {
+            if (s.getNombre().equalsIgnoreCase(nombre.trim())) {
+                return s;
+            }
+        }
+        return null;
     }
 
     public void agregarSede(Sede sede) {
         if (sede == null) {
             throw new IllegalArgumentException("La sede no puede ser nula");
         }
-        if (buscarSede(sede.getNombre()).isPresent()) {
+        if (buscarSede(sede.getNombre()) != null) {
             throw new IllegalArgumentException("Ya existe una sede llamada " + sede.getNombre());
         }
         if (sede.getSectores().isEmpty()) {
@@ -114,8 +119,8 @@ public final class Boleteria {
     }
 
     public void modificarSede(Sede sede, String nuevoNombre, String nuevaDireccion) {
-        Optional<Sede> otra = buscarSede(nuevoNombre);
-        if (otra.isPresent() && otra.get() != sede) {
+        Sede otra = buscarSede(nuevoNombre);
+        if (otra != null && otra != sede) {
             throw new IllegalArgumentException("Ya existe otra sede llamada " + nuevoNombre);
         }
         sede.setNombre(nuevoNombre);
@@ -141,10 +146,16 @@ public final class Boleteria {
     }
 
     public List<Funcion> getFuncionesActivas(Sede sede) {
-        return eventos.stream().flatMap(e -> e.getFunciones().stream())
-                .filter(f -> f.getSede() == sede)
-                .filter(f -> f.getEstado() == EstadoFuncion.PROGRAMADA || f.getEstado() == EstadoFuncion.AGOTADA)
-                .toList();
+        List<Funcion> activas = new ArrayList<>();
+        for (Evento e : eventos) {
+            for (Funcion f : e.getFunciones()) {
+                if (f.getSede() == sede
+                        && (f.getEstado() == EstadoFuncion.PROGRAMADA || f.getEstado() == EstadoFuncion.AGOTADA)) {
+                    activas.add(f);
+                }
+            }
+        }
+        return activas;
     }
 
     private void verificarSinFunciones(Sede sede, String accion) {
@@ -159,21 +170,29 @@ public final class Boleteria {
 
     public Cliente registrarCliente(String dni, String nombre, String email) {
         Cliente cliente = new Cliente(dni, nombre, email);
-        if (buscarClientePorEmail(cliente.getEmail()).isPresent()) {
+        if (buscarClientePorEmail(cliente.getEmail()) != null) {
             throw new IllegalArgumentException("Ya hay una cuenta con el email " + cliente.getEmail());
         }
-        if (clientes.stream().anyMatch(c -> c.getDni().equals(cliente.getDni()))) {
-            throw new IllegalArgumentException("Ya hay una cuenta con el DNI " + cliente.getDni());
+        for (Cliente c : clientes) {
+            if (c.getDni().equals(cliente.getDni())) {
+                throw new IllegalArgumentException("Ya hay una cuenta con el DNI " + cliente.getDni());
+            }
         }
         clientes.add(cliente);
         return cliente;
     }
 
-    public Optional<Cliente> buscarClientePorEmail(String email) {
+    /** Devuelve null si no existe. */
+    public Cliente buscarClientePorEmail(String email) {
         if (email == null) {
-            return Optional.empty();
+            return null;
         }
-        return clientes.stream().filter(c -> c.getEmail().equalsIgnoreCase(email.trim())).findFirst();
+        for (Cliente c : clientes) {
+            if (c.getEmail().equalsIgnoreCase(email.trim())) {
+                return c;
+            }
+        }
+        return null;
     }
 
     public List<Cliente> getClientes() {
@@ -196,11 +215,22 @@ public final class Boleteria {
 
     public List<Funcion> buscarFunciones(String texto) {
         String filtro = texto == null ? "" : texto.trim().toLowerCase();
-        return eventos.stream().flatMap(e -> e.getFuncionesDisponibles().stream())
-                .filter(f -> f.getEvento().getNombre().toLowerCase().contains(filtro)
-                        || f.getSede().getNombre().toLowerCase().contains(filtro))
-                .sorted(Comparator.comparing(Funcion::getFechaHora))
-                .toList();
+        List<Funcion> encontradas = new ArrayList<>();
+        for (Evento e : eventos) {
+            for (Funcion f : e.getFuncionesDisponibles()) {
+                if (f.getEvento().getNombre().toLowerCase().contains(filtro)
+                        || f.getSede().getNombre().toLowerCase().contains(filtro)) {
+                    encontradas.add(f);
+                }
+            }
+        }
+        encontradas.sort(new Comparator<Funcion>() {
+            @Override
+            public int compare(Funcion a, Funcion b) {
+                return a.getFechaHora().compareTo(b.getFechaHora());
+            }
+        });
+        return encontradas;
     }
 
     // ------------------------------------------------------------------ flujo de compra
@@ -250,10 +280,13 @@ public final class Boleteria {
     }
 
     public void aplicarCodigoPromocional(Compra compra, String codigo) {
-        Promocion promocion = promociones.stream().filter(p -> p.coincideCon(codigo))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("El código promocional " + codigo + " no existe"));
-        compra.aplicarPromocion(promocion);
+        for (Promocion promocion : promociones) {
+            if (promocion.coincideCon(codigo)) {
+                compra.aplicarPromocion(promocion);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("El código promocional " + codigo + " no existe");
     }
 
     /**
@@ -279,9 +312,8 @@ public final class Boleteria {
     private void cargarSecuenciaFactura() throws IOException {
         Path carpeta = directorioDatos.resolve("facturas");
         if (Files.isDirectory(carpeta)) {
-            try (var archivos = Files.list(carpeta)) {
-                Factura.establecerSecuencia((int) archivos.count() + 1);
-            }
+            String[] archivos = carpeta.toFile().list();
+            Factura.establecerSecuencia(archivos.length + 1);
         }
     }
 
@@ -305,8 +337,10 @@ public final class Boleteria {
 
     public Devolucion devolverEntrada(String codigoEntrada, String motivo, LocalDateTime ahora)
             throws DevolucionNoPermitidaException {
-        Entrada entrada = buscarEntrada(codigoEntrada)
-                .orElseThrow(() -> new DevolucionNoPermitidaException("No existe la entrada " + codigoEntrada));
+        Entrada entrada = buscarEntrada(codigoEntrada);
+        if (entrada == null) {
+            throw new DevolucionNoPermitidaException("No existe la entrada " + codigoEntrada);
+        }
         if (!entrada.puedeDevolverse(ahora)) {
             throw new DevolucionNoPermitidaException("La entrada " + codigoEntrada + " no se puede devolver: "
                     + "tiene que estar pagada y faltar al menos " + Devolucion.HORAS_LIMITE
@@ -318,11 +352,19 @@ public final class Boleteria {
         return devolucion;
     }
 
-    public Optional<Entrada> buscarEntrada(String codigo) {
-        return compras.stream().filter(c -> c.getEstado() == EstadoCompra.CONFIRMADA)
-                .flatMap(c -> c.getEntradas().stream())
-                .filter(e -> e.getCodigo().equalsIgnoreCase(codigo == null ? "" : codigo.trim()))
-                .findFirst();
+    /** Devuelve null si no existe. */
+    public Entrada buscarEntrada(String codigo) {
+        String buscado = codigo == null ? "" : codigo.trim();
+        for (Compra c : compras) {
+            if (c.getEstado() == EstadoCompra.CONFIRMADA) {
+                for (Entrada e : c.getEntradas()) {
+                    if (e.getCodigo().equalsIgnoreCase(buscado)) {
+                        return e;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public List<Compra> getCompras() {

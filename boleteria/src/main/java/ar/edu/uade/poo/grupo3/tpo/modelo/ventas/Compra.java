@@ -66,11 +66,21 @@ public class Compra {
     }
 
     public List<Entrada> getEntradasActivas() {
-        return entradas.stream().filter(e -> e.getEstado().estaActiva()).toList();
+        List<Entrada> activas = new ArrayList<>();
+        for (Entrada e : entradas) {
+            if (e.getEstado().estaActiva()) {
+                activas.add(e);
+            }
+        }
+        return activas;
     }
 
     public double calcularSubtotalEntradas() {
-        return getEntradasActivas().stream().mapToDouble(Entrada::getPrecio).sum();
+        double subtotal = 0;
+        for (Entrada e : getEntradasActivas()) {
+            subtotal += e.getPrecio();
+        }
+        return subtotal;
     }
 
     public double calcularSubtotal() {
@@ -139,7 +149,9 @@ public class Compra {
         if (estado != EstadoCompra.RESERVADA) {
             return;
         }
-        entradas.forEach(Entrada::anular);
+        for (Entrada e : entradas) {
+            e.anular();
+        }
         estado = nuevoEstado;
     }
 

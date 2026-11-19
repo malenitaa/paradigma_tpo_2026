@@ -62,8 +62,16 @@ public class SedeRepositorioArchivo implements Repositorio<Sede> {
             throw new IllegalArgumentException("faltan campos");
         }
         String nombreSede = p[0].trim();
-        Sede sede = sedes.stream().filter(s -> s.getNombre().equalsIgnoreCase(nombreSede)).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("la sede " + nombreSede + " no existe"));
+        Sede sede = null;
+        for (Sede s : sedes) {
+            if (s.getNombre().equalsIgnoreCase(nombreSede)) {
+                sede = s;
+                break;
+            }
+        }
+        if (sede == null) {
+            throw new IllegalArgumentException("la sede " + nombreSede + " no existe");
+        }
         String codigo = p[2];
         String nombre = p[3];
         int piso = Integer.parseInt(p[4].trim());
@@ -124,7 +132,11 @@ public class SedeRepositorioArchivo implements Repositorio<Sede> {
         if (rectangular) {
             return filas.size() + "x" + porFila;
         }
-        return String.join(",", numerado.getAsientos().stream().map(Asiento::toString).toList());
+        List<String> textos = new ArrayList<>();
+        for (Asiento a : numerado.getAsientos()) {
+            textos.add(a.toString());
+        }
+        return String.join(",", textos);
     }
 
     static List<String> leerLineas(Path archivo) throws IOException {

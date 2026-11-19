@@ -1,11 +1,15 @@
 package ar.edu.uade.poo.grupo3.tpo.modelo.ventas;
 
+import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /** Comprobante que se emite al confirmar una compra. Se guarda como .txt en datos/facturas. */
@@ -37,11 +41,17 @@ public class Factura {
                 .append(" · DNI ").append(compra.getCliente().getDni())
                 .append(" · ").append(compra.getCliente().getEmail()).append('\n');
         sb.append(linea);
-        compra.getEntradasActivas().stream().map(Entrada::getFuncion).distinct().forEach(f -> {
+        List<Funcion> funciones = new ArrayList<>();
+        for (Entrada e : compra.getEntradasActivas()) {
+            if (!funciones.contains(e.getFuncion())) {
+                funciones.add(e.getFuncion());
+            }
+        }
+        for (Funcion f : funciones) {
             sb.append(f.getEvento().getNombre()).append('\n');
             sb.append(f.getSede().getNombre()).append(" · ")
                     .append(f.getFechaHora().format(FORMATO)).append(" hs\n\n");
-        });
+        }
         for (Entrada e : compra.getEntradasActivas()) {
             sb.append(String.format("%-9s %-30s %14s%n", e.getCodigo(), e.getUbicacion(), pesos(e.getPrecio())));
         }

@@ -231,13 +231,17 @@ public class PanelVenta extends JPanel implements Pantalla {
         cargando = true;
         Object funcionAnterior = funciones.getSelectedItem();
         funciones.removeAllItems();
-        controlador.funcionesDisponibles().forEach(funciones::addItem);
+        for (Funcion f : controlador.funcionesDisponibles()) {
+            funciones.addItem(f);
+        }
         if (funcionAnterior != null) {
             funciones.setSelectedItem(funcionAnterior);
         }
         Object clienteAnterior = clientes.getSelectedItem();
         clientes.removeAllItems();
-        controlador.clientes().forEach(clientes::addItem);
+        for (Cliente c : controlador.clientes()) {
+            clientes.addItem(c);
+        }
         if (clienteAnterior != null) {
             clientes.setSelectedItem(clienteAnterior);
         }
@@ -258,7 +262,9 @@ public class PanelVenta extends JPanel implements Pantalla {
         sectores.removeAllItems();
         Funcion funcion = funcion();
         if (funcion != null) {
-            funcion.getSede().getSectores().forEach(sectores::addItem);
+            for (Sector s : funcion.getSede().getSectores()) {
+                sectores.addItem(s);
+            }
         }
         cargando = false;
         seleccion.clear();
@@ -408,8 +414,12 @@ public class PanelVenta extends JPanel implements Pantalla {
         }
         int entradas = sector instanceof SectorNumerado ? seleccion.size() : (Integer) cantidad.getValue();
         if (sector instanceof SectorNumerado) {
+            List<String> nombresAsientos = new ArrayList<>();
+            for (Asiento a : seleccion) {
+                nombresAsientos.add(a.toString());
+            }
             detalle.setText(seleccion.isEmpty() ? "Elegí tus asientos en el mapa."
-                    : "Elegidos: " + String.join(" ", seleccion.stream().map(Asiento::toString).toList()));
+                    : "Elegidos: " + String.join(" ", nombresAsientos));
         } else {
             detalle.setText(entradas + " entrada(s) en " + sector.getNombre());
         }

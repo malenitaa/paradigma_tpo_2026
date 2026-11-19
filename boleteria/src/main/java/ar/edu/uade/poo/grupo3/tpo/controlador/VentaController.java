@@ -20,7 +20,6 @@ import ar.edu.uade.poo.grupo3.tpo.modelo.ventas.Entrada;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controlador de la venta de entradas (patrón MVC): la pantalla le avisa qué hizo el usuario,
@@ -64,9 +63,15 @@ public class VentaController {
 
     /** Si el asiento está reservado por la compra en curso (para pintarlo como "tu reserva"). */
     public boolean estaReservado(Funcion funcion, Sector sector, Asiento asiento) {
-        return compra != null && compra.getEntradasActivas().stream()
-                .anyMatch(e -> e.getSector().equals(sector) && asiento.equals(e.getAsiento())
-                        && e.getFuncion() == funcion);
+        if (compra == null) {
+            return false;
+        }
+        for (Entrada e : compra.getEntradasActivas()) {
+            if (e.getSector().equals(sector) && asiento.equals(e.getAsiento()) && e.getFuncion() == funcion) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -140,7 +145,8 @@ public class VentaController {
 
     // ------------------------------------------------------------------ devoluciones
 
-    public Optional<Entrada> buscarEntrada(String codigo) {
+    /** Devuelve null si no existe. */
+    public Entrada buscarEntrada(String codigo) {
         return boleteria.buscarEntrada(codigo);
     }
 

@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Optional;
 
 /**
  * Configura la boletería: carga los .txt de la carpeta datos/ y, si están vacíos, crea datos de ejemplo.
@@ -58,19 +57,19 @@ public final class DatosIniciales {
     }
 
     public static void crearEventosDeEjemplo(Boleteria boleteria) {
-        Optional<Sede> esfera = boleteria.buscarSede("Esfera Las Vegas");
-        if (esfera.isEmpty()) {
+        Sede esfera = boleteria.buscarSede("Esfera Las Vegas");
+        if (esfera == null) {
             return;
         }
         Evento recital = new Evento(1, "Los Satélites — Órbita Tour", "Show en 360°", 120, "Rock");
         recital.agregarArtista("Los Satélites");
         LocalDate hoy = LocalDate.now();
         Funcion f1 = new Funcion(1, recital, LocalDateTime.of(hoy.plusDays(15), LocalTime.of(21, 0)),
-                50000, esfera.get());
+                50000, esfera);
         Funcion f2 = new Funcion(2, recital, LocalDateTime.of(hoy.plusDays(30), LocalTime.of(21, 0)),
-                50000, esfera.get());
+                50000, esfera);
         Funcion f3 = new Funcion(3, recital, LocalDateTime.of(hoy.plusDays(1), LocalTime.of(21, 0)),
-                50000, esfera.get());
+                50000, esfera);
         recital.agregarFuncion(f1);
         recital.agregarFuncion(f2);
         recital.agregarFuncion(f3);

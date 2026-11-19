@@ -2,6 +2,7 @@ package ar.edu.uade.poo.grupo3.tpo.vista;
 
 import ar.edu.uade.poo.grupo3.tpo.modelo.Boleteria;
 import ar.edu.uade.poo.grupo3.tpo.modelo.eventos.Funcion;
+import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sector;
 import ar.edu.uade.poo.grupo3.tpo.modelo.infraestructura.Sede;
 
 import javax.swing.BorderFactory;
@@ -66,12 +67,21 @@ public class PanelInicio extends JPanel implements Pantalla {
     @Override
     public void alMostrar() {
         sedes.setText(Estilo.numero(boleteria.getSedes().size()));
-        sectores.setText(Estilo.numero(boleteria.getSedes().stream().mapToLong(s -> s.getSectores().size()).sum()));
-        capacidad.setText(Estilo.numero(boleteria.getSedes().stream().mapToLong(Sede::getCapacidadTotal).sum()));
+        long totalSectores = 0;
+        long totalCapacidad = 0;
+        for (Sede s : boleteria.getSedes()) {
+            totalSectores += s.getSectores().size();
+            totalCapacidad += s.getCapacidadTotal();
+        }
+        sectores.setText(Estilo.numero(totalSectores));
+        capacidad.setText(Estilo.numero(totalCapacidad));
         cuentas.setText(Estilo.numero(boleteria.getClientes().size()));
         modeloFunciones.setRowCount(0);
         for (Funcion f : boleteria.buscarFunciones("")) {
-            int ocupados = f.getSede().getSectores().stream().mapToInt(f::lugaresOcupados).sum();
+            int ocupados = 0;
+            for (Sector s : f.getSede().getSectores()) {
+                ocupados += f.lugaresOcupados(s);
+            }
             int total = f.getSede().getCapacidadTotal();
             String estado = f.getEstado().toString();
             modeloFunciones.addRow(new Object[]{f.getEvento().getNombre(), f.getSede().getNombre(),
